@@ -359,7 +359,19 @@
   ctx.stroke();
   ctx.restore();
 
-  // -- Gravata vermelha --
+  // -- Camisa branca sob paletó --
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-7, -4);
+  ctx.lineTo(7, -4);
+  ctx.lineTo(7, 24);
+  ctx.lineTo(-7, 24);
+  ctx.closePath();
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.restore();
+
+      // -- Gravata vermelha --
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(0, -2);    // nó da gravata
@@ -374,19 +386,7 @@
   ctx.fillStyle = "#a00";
   ctx.fill();
   ctx.restore();
-
-  // -- Camisa branca sob paletó --
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-7, -4);
-  ctx.lineTo(7, -4);
-  ctx.lineTo(7, 24);
-  ctx.lineTo(-7, 24);
-  ctx.closePath();
-  ctx.fillStyle = "#fff";
-  ctx.fill();
-  ctx.restore();
-
+      
   // -- Pernas (calça preta estilizada) --
   ctx.save();
   ctx.lineWidth = 9;
