@@ -8,46 +8,16 @@
   <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
   <style>
-    body {
-      font-family: 'JetBrains Mono', monospace;
-      background: #222c36;
-    }
-    canvas {
-      background: transparent;
-      display: block;
-      margin: 0 auto;
-      touch-action: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .hebrew {
-      font-family: 'Noto Sans Hebrew', sans-serif;
-      font-size: 2.2rem;
-      direction: rtl;
-    }
-    .modal-bg {
-      background: rgba(0,0,0,0.7);
-    }
-    .slide-in {
-      animation: slide-in 1.1s cubic-bezier(0.4,0,0.2,1);
-    }
-    @keyframes slide-in {
-      from { transform: translateY(-30px); opacity:0; }
-      to { transform: translateY(0); opacity:1; }
-    }
-    .char-choice {
-      transition: transform 0.18s;
-    }
-    .char-choice.selected {
-      transform: scale(1.13);
-      border: 3px solid #2563eb;
-      box-shadow: 0 0 0 4px #2563eb55;
-      z-index: 2;
-    }
-    @media (max-width: 600px) {
-      #game { margin-top: 10px !important; }
-    }
+    body { font-family: 'JetBrains Mono', monospace; background: #222c36; }
+    canvas { background: transparent; display: block; margin: 0 auto; touch-action: none; }
+    .hebrew { font-family: 'Noto Sans Hebrew', sans-serif; font-size: 2.2rem; direction: rtl; }
+    .modal-bg { background: rgba(0,0,0,0.7); }
+    .slide-in { animation: slide-in 1.1s cubic-bezier(0.4,0,0.2,1);}
+    @keyframes slide-in { from { transform: translateY(-30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .char-choice { transition: transform 0.18s; }
+    .char-choice.selected { transform: scale(1.13); border: 3px solid #2563eb; box-shadow: 0 0 0 4px #2563eb55; z-index: 2; }
+    @media (max-width: 600px) { #game { margin-top: 10px !important; } }
+    .lives-heart { color: #ff4141; font-size: 2rem; margin-right: 0.3em; }
   </style>
 </head>
 <body class="flex flex-col items-center min-h-screen bg-gray-900">
@@ -75,12 +45,14 @@
     </div>
   </div>
 
-  <div id="score" class="fixed top-5 right-8 text-xl text-white z-20 bg-gray-700 px-5 py-2 rounded-2xl shadow-lg font-bold flex items-center gap-2" style="display:none;">
-    Pontos: <span id="scoreValue">0</span>
+  <!-- HUD de Pontos e Vidas -->
+  <div id="scoreHud" class="fixed top-5 right-8 text-xl text-white z-20 flex items-center gap-7" style="display:none;">
+    <div class="bg-gray-700 px-5 py-2 rounded-2xl shadow-lg font-bold flex items-center gap-2">Pontos: <span id="scoreValue">0</span></div>
+    <div id="lives" class="flex items-center"></div>
   </div>
   <canvas id="game" width="900" height="440" class="rounded-2xl border-2 border-gray-800 shadow-2xl mt-10" style="display:none;"></canvas>
 
-  <!-- Controles Touch para dispositivos móveis -->
+  <!-- Controles Touch -->
   <div id="touchControls" class="fixed left-0 bottom-0 w-full flex justify-between items-end px-6 pb-5 z-30" style="display:none;">
     <div class="flex gap-3">
       <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnLeft" tabindex="-1">←</button>
@@ -88,10 +60,11 @@
     </div>
     <div class="flex gap-3">
       <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnUp" tabindex="-1">↑</button>
+      <button class="bg-yellow-500 text-white rounded-full w-16 h-16 text-2xl flex items-center justify-center active:bg-yellow-600" id="btnFire" tabindex="-1">✝️</button>
     </div>
   </div>
 
-  <!-- Modal para desafio -->
+  <!-- Modal de Desafio -->
   <div id="modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
     <div class="modal-bg absolute inset-0"></div>
     <div class="relative p-8 bg-gray-100 rounded-xl shadow-2xl w-[350px] slide-in">
@@ -112,100 +85,21 @@
     </div>
   </div>
 
-  <!-- Fim de jogo -->
+  <!-- Tela Fim de Jogo -->
   <div id="endModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
     <div class="modal-bg absolute inset-0"></div>
     <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center">
-      <h2 class="text-2xl text-blue-800 font-bold mb-4">Fim de Jogo!</h2>
-      <p class="mb-2 text-lg">Parabéns <span id="finalPlayer" class="font-bold text-blue-900"></span>!</p>
-      <p class="mb-2 text-lg">Pontuação final: <span id="finalScore" class="font-bold text-blue-700"></span></p>
+      <h2 id="endTitle" class="text-2xl text-blue-800 font-bold mb-4"></h2>
+      <p id="endMsg" class="mb-2 text-lg"></p>
       <button onclick="window.location.reload()" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button>
     </div>
   </div>
 
   <script>
-    // ======= Utilitário: Detecta se é dispositivo móvel =======
+    // --- UTILS ---
     function isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
-
-    // ======= Tela Inicial: seleção de personagem e nome =======
-    let selectedChar = 0;
-    let playerName = "";
-    let usedHint = false;
-
-    const charBtns = [document.getElementById('char1'), document.getElementById('char2')];
-
-    function updatePlayBtnState() {
-      document.getElementById('playBtn').disabled = !(playerName.length > 0 && selectedChar > 0);
-    }
-
-    charBtns.forEach((btn, idx) => {
-      btn.addEventListener('click', () => {
-        selectedChar = idx + 1;
-        charBtns.forEach((b, j) => b.classList.toggle('selected', j === idx));
-        updatePlayBtnState();
-      });
-    });
-
-    document.getElementById('username').addEventListener('input', function() {
-      playerName = this.value.trim();
-      updatePlayBtnState();
-    });
-
-    document.getElementById('playBtn').addEventListener('click', function() {
-      document.getElementById('startScreen').style.display = "none";
-      document.getElementById('game').style.display = "";
-      document.getElementById('score').style.display = "";
-      if (isMobile()) {
-        document.getElementById('touchControls').style.display = "flex";
-      } else {
-        document.getElementById('touchControls').style.display = "none";
-      }
-      startGame();
-    });
-
-    // ======= Palavras e Dicionário =======
-    const charImgs = [
-      "personagem1.png",
-      "personagem2.png"
-    ];
-
-    const backgroundImageUrl = "fundo.jpg";
-
-    const WORDS = [
-      {he: "בֵּן", tr: "ben", pt: ["filho", "menino", "descendente"], dica: "Começa com 'f' (parentesco masculino)"},
-      {he: "אִישׁ", tr: "ish", pt: ["homem", "marido"], dica: "Masculino adulto"},
-      {he: "אֵל", tr: "el", pt: ["deus", "Deus"], dica: "Ser supremo ou divino"},
-      {he: "מֶלֶךְ", tr: "melekh", pt: ["rei"], dica: "Soberano de um povo"},
-      {he: "יָד", tr: "yad", pt: ["mão", "poder"], dica: "Parte do corpo para segurar"},
-      {he: "רֹאשׁ", tr: "rosh", pt: ["cabeça", "líder"], dica: "Topo do corpo, ou líder"},
-      {he: "אֶרֶץ", tr: "erets", pt: ["terra", "país", "solo", "mundo"], dica: "Planeta, solo, nação"},
-      {he: "דָּבָר", tr: "davar", pt: ["palavra", "coisa", "assunto"], dica: "O que se diz ou discute"},
-      {he: "עִיר", tr: "ir", pt: ["cidade"], dica: "Conjunto de casas e ruas, urbe"},
-      {he: "אָב", tr: "av", pt: ["pai", "ancestral"], dica: "Progenitor masculino"},
-      {he: "אֵם", tr: "em", pt: ["mãe"], dica: "Progenitora feminina"},
-      {he: "שָׁנָה", tr: "shanah", pt: ["ano"], dica: "Período de 12 meses"},
-      {he: "שָׁלוֹם", tr: "shalom", pt: ["paz", "bem-estar", "segurança"], dica: "Desejo de tranquilidade"},
-      {he: "שָׁמַיִם", tr: "shamayim", pt: ["céu", "céus"], dica: "Onde estão as nuvens"},
-      {he: "מַיִם", tr: "mayim", pt: ["água", "águas"], dica: "Líquido essencial à vida"},
-      {he: "אוֹר", tr: "or", pt: ["luz", "claridade"], dica: "Permite enxergar"},
-      {he: "עֵין", tr: "ayin", pt: ["olho", "fonte", "vista"], dica: "Sentido da visão"},
-      {he: "אָח", tr: "ach", pt: ["irmão"], dica: "Filho do mesmo pai/mãe"},
-      {he: "אָדָם", tr: "adam", pt: ["homem", "humanidade", "Adão"], dica: "Primeiro homem ou ser humano"},
-      {he: "אָמַר", tr: "amar", pt: ["disse", "dizer", "falou", "falar"], dica: "Ato de expressar palavras"},
-      {he: "עָשָׂה", tr: "asah", pt: ["fez", "fazer", "realizar"], dica: "Ato de executar uma tarefa"},
-      {he: "רָאָה", tr: "ra'ah", pt: ["viu", "ver", "enxergar"], dica: "Perceber com os olhos"},
-      {he: "יָצָא", tr: "yatza", pt: ["saiu", "sair"], dica: "Ir para fora"},
-      {he: "יָשַׁב", tr: "yashav", pt: ["sentou", "assentar", "habitou", "morar", "residir"], dica: "Ficar em um lugar"},
-      {he: "הָלַךְ", tr: "halakh", pt: ["andou", "andar", "caminhou", "caminhar"], dica: "Locomoção com as pernas"},
-      {he: "עָמַד", tr: "amad", pt: ["ficou", "ficar", "permaneceu", "ficar em pé"], dica: "Manter-se parado"},
-      {he: "יָדַע", tr: "yada", pt: ["soube", "saber", "conheceu", "conhecer"], dica: "Ter conhecimento"},
-      {he: "אָכַל", tr: "akal", pt: ["comeu", "comer"], dica: "Ato de ingerir alimento"},
-      {he: "שָׁמַע", tr: "shama", pt: ["ouviu", "ouvir"], dica: "Sentido de escutar"},
-      {he: "שָׁבַר", tr: "shavar", pt: ["quebrou", "quebrar", "despedaçou"], dica: "Partiu em pedaços"},
-    ];
-
     function normalize(str) {
       return str
         .toLowerCase()
@@ -215,39 +109,141 @@
         .trim();
     }
 
-    // ======= Engine principal do jogo =======
-    let player, cameraX, worldLength, groundY, wordPositions, currentWordIdx, challengeActive, challengeStartTime, points, wordsFound, keys, charImages;
-    let challengeTimer = null;
-    let challengeTimeout = 16;
+    // --- TELA INICIAL ---
+    let selectedChar = 0, playerName = "", usedHint = false;
+    const charBtns = [document.getElementById('char1'), document.getElementById('char2')];
+    function updatePlayBtnState() {
+      document.getElementById('playBtn').disabled = !(playerName.length > 0 && selectedChar > 0);
+    }
+    charBtns.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        selectedChar = idx + 1;
+        charBtns.forEach((b, j) => b.classList.toggle('selected', j === idx));
+        updatePlayBtnState();
+      });
+    });
+    document.getElementById('username').addEventListener('input', function() {
+      playerName = this.value.trim();
+      updatePlayBtnState();
+    });
+    document.getElementById('playBtn').addEventListener('click', function() {
+      document.getElementById('startScreen').style.display = "none";
+      document.getElementById('game').style.display = "";
+      document.getElementById('scoreHud').style.display = "";
+      if (isMobile()) document.getElementById('touchControls').style.display = "flex";
+      else document.getElementById('touchControls').style.display = "none";
+      startGame();
+    });
+
+    // --- PALAVRAS ---
+    const charImgs = [
+      "personagem1.png",
+      "personagem2.png",
+      "personagem3.png" // Fariseu
+    ];
+    const backgroundImageUrl = "fundo.jpg";
+
+    // 30 palavras variadas e יָד (iad) como power-up
+    const WORDS = [
+      // Substantivos (sing/plural, masc/fem)
+      {he:"בֵּן", tr:"ben", pt:["filho","menino","descendente"], dica:"Parentesco masculino"},
+      {he:"בָּנִים", tr:"banim", pt:["filhos","meninos","descendentes"], dica:"Plural de filho"},
+      {he:"אִשָּׁה", tr:"ishá", pt:["mulher","esposa"], dica:"Feminino de homem"},
+      {he:"אִישׁ", tr:"ish", pt:["homem","marido"], dica:"Masculino adulto"},
+      {he:"נָבִיא", tr:"navi", pt:["profeta"], dica:"Homem que fala por Deus"},
+      {he:"מֶלֶךְ", tr:"melekh", pt:["rei"], dica:"Soberano do povo"},
+      {he:"מַלְכָּה", tr:"malká", pt:["rainha"], dica:"Soberana do povo"},
+      {he:"אֵם", tr:"em", pt:["mãe"], dica:"Progenitora feminina"},
+      {he:"אָב", tr:"av", pt:["pai","ancestral"], dica:"Progenitor masculino"},
+      {he:"תַּלְמִיד", tr:"talmid", pt:["discípulo","aluno"], dica:"Segue o mestre"},
+      // Verbos e variações
+      {he:"אָמַר", tr:"amar", pt:["disse","falar","falou","dizer"], dica:"Expressar palavras"},
+      {he:"הָלַךְ", tr:"halakh", pt:["andou","andar","caminhou","caminhar"], dica:"Locomoção"},
+      {he:"אָמְרוּ", tr:"amru", pt:["disseram","falaram"], dica:"Plural de disse"},
+      {he:"שָׁמַע", tr:"shama", pt:["ouviu","ouvir"], dica:"Sentido de escutar"},
+      {he:"יָשַׁב", tr:"yashav", pt:["sentou","assentar","habitou","morar","residir"], dica:"Ficar em um lugar"},
+      {he:"אָכַל", tr:"akal", pt:["comeu","comer"], dica:"Ato de comer"},
+      {he:"לָקַח", tr:"lakach", pt:["pegou","tomou","pegar","tomar"], dica:"Ato de tomar algo"},
+      {he:"רָאָה", tr:"ra'ah", pt:["viu","ver"], dica:"Perceber com os olhos"},
+      // Preposições e termos diversos
+      {he:"אֵת", tr:"et", pt:["com","junto de","com o"], dica:"Preposição - junto de"},
+      {he:"בְּתוֹךְ", tr:"betoch", pt:["dentro","em meio a"], dica:"No interior de algo"},
+      {he:"עִם", tr:"im", pt:["com"], dica:"Junto de"},
+      {he:"עַל", tr:"al", pt:["sobre","em cima de","acima"], dica:"Em cima"},
+      {he:"אֶל", tr:"el", pt:["para","até"], dica:"Direção, movimento"},
+      {he:"לִפְנֵי", tr:"lifnei", pt:["antes de","diante de"], dica:"Antes no tempo ou espaço"},
+      // Outros
+      {he:"דָּבָר", tr:"davar", pt:["palavra","coisa","assunto"], dica:"O que se diz"},
+      {he:"עִיר", tr:"ir", pt:["cidade"], dica:"Lugar urbano"},
+      {he:"שָׁלוֹם", tr:"shalom", pt:["paz","bem-estar","segurança"], dica:"Desejo de paz"},
+      {he:"שָׁנָה", tr:"shanah", pt:["ano"], dica:"Tempo de 12 meses"},
+      {he:"מַיִם", tr:"mayim", pt:["água","águas"], dica:"Líquido essencial"},
+      {he:"עֵין", tr:"ayin", pt:["olho","vista"], dica:"Sentido da visão"},
+      // Power-up
+      {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true}
+    ];
+
+    // Distribuição dos elementos no mapa:
+    let gameElements = []; // [{type, ...}]: type: "word" | "power" | "vilao"
+    let powerCount = 0, vilaoCount = 0;
+    function setupMapElements() {
+      // Aleatoriza palavras, insere yad, vilão
+      let shuffledWords = WORDS.filter(w=>!w.power).sort(()=>Math.random()-0.5);
+      let yadsToAdd = 10, wordsToAdd = 30;
+      let powerSpacing = 3, vilaoSpacing = 3, vilaoStart = 7;
+      let elements = [], idx=0, yads=0, vilaos=0;
+      for (let i=0; i<wordsToAdd; i++) {
+        // Inserir yad?
+        if (i && i%powerSpacing === 0 && yads<yadsToAdd) {
+          elements.push({type:"power", idx:WORDS.length-1});
+          yads++;
+        }
+        // Inserir vilão?
+        if (i >= vilaoStart && (i-vilaoStart)%vilaoSpacing === 0) {
+          elements.push({type:"vilao"});
+          vilaos++;
+        }
+        // Palavra
+        elements.push({type:"word", idx:shuffledWords[idx%shuffledWords.length], wordObj:shuffledWords[idx%shuffledWords.length]});
+        idx++;
+      }
+      gameElements = elements;
+      powerCount = yads;
+      vilaoCount = vilaos;
+    }
+
+    // --- GAME ENGINE ---
+    let player, cameraX, worldLength, groundY, wordPositions, currentWordIdx, challengeActive, challengeStartTime,
+      points, wordsFound, keys, charImages, vidas, brilho, cruzes, viloes, gameOver, endGameType;
+
+    let challengeTimer = null, challengeTimeout = 16;
     let bgImg = new window.Image();
     bgImg.src = backgroundImageUrl;
 
     function startGame() {
       player = {
-        x: 80,
-        y: 320,
-        width: 36,
-        height: 66,
-        vx: 0,
-        vy: 0,
-        speed: 4.2,
-        onGround: true,
-        gravity: 0.58,
-        jumpPower: -10.6,
-        direction: 1
+        x: 80, y: 320, width: 36, height: 66,
+        vx: 0, vy: 0, speed: 4.2, onGround: true,
+        gravity: 0.58, jumpPower: -10.6, direction: 1
       };
       cameraX = 0;
-      worldLength = 3400;
       groundY = 360;
+      worldLength = 300 + gameElements.length*120 + 800;
       wordPositions = [];
       currentWordIdx = -1;
       challengeActive = false;
       challengeStartTime = 0;
-      points = 0;
+      points = 200;
       wordsFound = 0;
       keys = {};
-
-      generateWordsOnMap();
+      vidas = 3;
+      brilho = 0;
+      cruzes = [];
+      viloes = [];
+      gameOver = false;
+      endGameType = "";
+      updateLives();
+      generatePositions();
       loadCharImages().then(()=>{
         drawWorld();
         setTimeout(() => gameLoop(), 250);
@@ -257,39 +253,41 @@
     function loadCharImages() {
       return new Promise(resolve=>{
         charImages = [];
-        let img1 = new Image(), img2 = new Image();
-        img1.src = charImgs[0];
-        img2.src = charImgs[1];
-        img1.onload = img2.onload = function() {
-          charImages = [img1, img2];
-          resolve();
-        };
+        let loads = 0;
+        charImgs.forEach((src,i)=>{
+          let img = new Image();
+          img.src = src;
+          img.onload = () => { charImages[i] = img; if(++loads===charImgs.length) resolve(); }
+          img.onerror = () => { loads++; if(loads===charImgs.length) resolve();}
+        });
       });
     }
 
-    // Palavras em alturas variadas, sem obstáculos
-    function generateWordsOnMap() {
+    function generatePositions() {
       wordPositions = [];
-      let usedIndexes = new Set();
-      let numPalavras = 12;
-      let baseX = 340;
-      let step = 250;
-      for (let i = 0; i < numPalavras; i++) {
-        let wordIdx;
-        do {
-          wordIdx = Math.floor(Math.random() * WORDS.length);
-        } while (usedIndexes.has(wordIdx) && usedIndexes.size < WORDS.length - 1);
-        usedIndexes.add(wordIdx);
-        // altura entre 160 e 320 (canvas 440)
-        let yWord = 160 + Math.random()*160;
-        let xWord = baseX + i * step + Math.random()*50;
-        wordPositions.push({x: xWord, y: yWord, idx: wordIdx, found: false});
+      viloes = [];
+      let baseX = 300;
+      let lastY = 200;
+      for (let i=0,x=baseX; i<gameElements.length; i++) {
+        let y = 140 + Math.random()*180;
+        // Não sobrepor com último Y
+        if (Math.abs(y-lastY)<60) y = Math.max(120, Math.min(380, lastY+70*(Math.random()<0.5?-1:1)));
+        let el = gameElements[i];
+        if (el.type==="word" || el.type==="power") {
+          wordPositions.push({
+            x:x, y:y, found:false, idx:el.type==="word"?WORDS.indexOf(el.wordObj):WORDS.length-1, type:el.type
+          });
+        } else if (el.type==="vilao") {
+          viloes.push({x:x, y:y+10, alive:true, cooldown:0});
+        }
+        x += 120 + Math.random()*40;
+        lastY = y;
       }
     }
 
+    // --- DRAW ---
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
-
     function drawBackground() {
       if(bgImg.complete && bgImg.naturalWidth) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -299,157 +297,201 @@
       }
       ctx.save();
       ctx.globalAlpha = 0.13;
-      ctx.font = "bold 90px JetBrains Mono, monospace";
+      ctx.font = "bold 80px JetBrains Mono, monospace";
       ctx.fillStyle = "#2d2d5a";
       ctx.textAlign = "center";
       ctx.fillText("Rodrigo Niskier", canvas.width/2, canvas.height/2+30);
       ctx.restore();
     }
 
-   function drawPlayer() {
-  ctx.save();
-  let px = player.x - cameraX + player.width / 2, py = player.y + player.height / 2;
-  ctx.translate(px, py);
-  ctx.scale(player.direction, 1);
-
-  // Ombros e peito (paletó azul escuro)
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-21, -4); // ombro esquerdo
-  ctx.lineTo(21, -4);  // ombro direito
-  ctx.lineTo(15, 36);  // lado direito da cintura
-  ctx.lineTo(-15, 36); // lado esquerdo da cintura
-  ctx.closePath();
-  ctx.fillStyle = "#273262"; // azul escuro
-  ctx.fill();
-  ctx.strokeStyle = "#182042";
-  ctx.lineWidth = 2.2;
-  ctx.stroke();
-  ctx.restore();
-
-  // Camisa branca sob paletó
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-7, -4);
-  ctx.lineTo(7, -4);
-  ctx.lineTo(7, 24);
-  ctx.lineTo(-7, 24);
-  ctx.closePath();
-  ctx.fillStyle = "#fff";
-  ctx.fill();
-  ctx.restore();
-
-  // Gravata vermelha - centralizada e visível
-  ctx.save();
-  // Nó da gravata (circulo pequeno)
-  ctx.beginPath();
-  ctx.arc(0, 0, 3.5, 0, 2 * Math.PI);
-  ctx.fillStyle = "#be2323";
-  ctx.fill();
-  // Parte longa da gravata (triângulo)
-  ctx.beginPath();
-  ctx.moveTo(0, 3);
-  ctx.lineTo(-5, 22);
-  ctx.lineTo(5, 22);
-  ctx.closePath();
-  ctx.fillStyle = "#be2323";
-  ctx.fill();
-  ctx.restore();
-
-  // Braços (paletó azul escuro)
-  ctx.save();
-  ctx.lineWidth = 9;
-  ctx.strokeStyle = "#273262";
-  ctx.beginPath();
-  // Braço esquerdo
-  ctx.moveTo(-19, 2);
-  ctx.lineTo(-29, 34);
-  // Braço direito
-  ctx.moveTo(19, 2);
-  ctx.lineTo(29, 34);
-  ctx.stroke();
-  // Punhos brancos
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "#fff";
-  ctx.beginPath();
-  ctx.moveTo(-29, 34);
-  ctx.lineTo(-29, 38);
-  ctx.moveTo(29, 34);
-  ctx.lineTo(29, 38);
-  ctx.stroke();
-  // Mãos bege claro
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "#f9e5ce";
-  ctx.beginPath();
-  ctx.moveTo(-29, 39);
-  ctx.lineTo(-29, 43);
-  ctx.moveTo(29, 39);
-  ctx.lineTo(29, 43);
-  ctx.stroke();
-  ctx.restore();
-
-  // Pernas (calça preta estilizada)
-  ctx.save();
-  ctx.lineWidth = 9;
-  ctx.strokeStyle = "#191d25";
-  ctx.beginPath();
-  ctx.moveTo(-7, 36);
-  ctx.lineTo(-10, 63);
-  ctx.moveTo(7, 36);
-  ctx.lineTo(10, 63);
-  ctx.stroke();
-  // Sapatos (cinza escuro)
-  ctx.lineWidth = 7.5;
-  ctx.strokeStyle = "#353942";
-  ctx.beginPath();
-  ctx.moveTo(-10, 64);
-  ctx.lineTo(-10, 67);
-  ctx.moveTo(10, 64);
-  ctx.lineTo(10, 67);
-  ctx.stroke();
-  ctx.restore();
-
-  // Cabeça (imagem escolhida)
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, -21, 18, 0, 2 * Math.PI);
-  ctx.closePath();
-  ctx.clip();
-  if (charImages && charImages[selectedChar - 1]) {
-    ctx.drawImage(charImages[selectedChar - 1], -18, -39, 36, 36);
-  } else {
-    ctx.fillStyle = "#f8e6d4";
-    ctx.arc(0, -21, 17, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-  ctx.restore();
-
-  ctx.restore();
-}
+    function drawPlayer() {
+      ctx.save();
+      let px = player.x - cameraX + player.width / 2, py = player.y + player.height / 2;
+      ctx.translate(px, py);
+      ctx.scale(player.direction, 1);
+      // Brilho de poder?
+      if (brilho>0) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.45, brilho/90);
+        for(let i=0;i<16;i++){
+          ctx.beginPath();
+          ctx.arc(0,6,32+6*Math.sin(i+brilho/8),0,2*Math.PI);
+          ctx.strokeStyle = `rgba(255,220,30,${0.26 + Math.random()*0.09})`;
+          ctx.lineWidth = 8+Math.random()*6;
+          ctx.shadowBlur = 17;
+          ctx.shadowColor = "#ffe75a";
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      // Ombros e peito (paletó azul escuro)
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(-21, -4);
+      ctx.lineTo(21, -4);
+      ctx.lineTo(15, 36);
+      ctx.lineTo(-15, 36);
+      ctx.closePath();
+      ctx.fillStyle = "#273262";
+      ctx.fill();
+      ctx.strokeStyle = "#182042";
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+      ctx.restore();
+      // Camisa branca sob paletó
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(-7, -4);
+      ctx.lineTo(7, -4);
+      ctx.lineTo(7, 24);
+      ctx.lineTo(-7, 24);
+      ctx.closePath();
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.restore();
+      // Gravata vermelha
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#be2323";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, 3);
+      ctx.lineTo(-5, 22);
+      ctx.lineTo(5, 22);
+      ctx.closePath();
+      ctx.fillStyle = "#be2323";
+      ctx.fill();
+      ctx.restore();
+      // Braços (paletó azul escuro)
+      ctx.save();
+      ctx.lineWidth = 9;
+      ctx.strokeStyle = "#273262";
+      ctx.beginPath();
+      ctx.moveTo(-19, 2); ctx.lineTo(-29, 34);
+      ctx.moveTo(19, 2); ctx.lineTo(29, 34);
+      ctx.stroke();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#fff";
+      ctx.beginPath();
+      ctx.moveTo(-29, 34); ctx.lineTo(-29, 38);
+      ctx.moveTo(29, 34); ctx.lineTo(29, 38);
+      ctx.stroke();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#f9e5ce";
+      ctx.beginPath();
+      ctx.moveTo(-29, 39); ctx.lineTo(-29, 43);
+      ctx.moveTo(29, 39); ctx.lineTo(29, 43);
+      ctx.stroke();
+      ctx.restore();
+      // Pernas
+      ctx.save();
+      ctx.lineWidth = 9;
+      ctx.strokeStyle = "#191d25";
+      ctx.beginPath();
+      ctx.moveTo(-7, 36); ctx.lineTo(-10, 63);
+      ctx.moveTo(7, 36); ctx.lineTo(10, 63);
+      ctx.stroke();
+      ctx.lineWidth = 7.5;
+      ctx.strokeStyle = "#353942";
+      ctx.beginPath();
+      ctx.moveTo(-10, 64); ctx.lineTo(-10, 67);
+      ctx.moveTo(10, 64); ctx.lineTo(10, 67);
+      ctx.stroke();
+      ctx.restore();
+      // Cabeça (imagem)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(0, -21, 18, 0, 2 * Math.PI);
+      ctx.closePath();
+      ctx.clip();
+      if (charImages && charImages[selectedChar-1]) {
+        ctx.drawImage(charImages[selectedChar-1], -18, -39, 36, 36);
+      } else {
+        ctx.fillStyle = "#f8e6d4";
+        ctx.arc(0, -21, 17, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+      ctx.restore();
+      ctx.restore();
+    }
 
     function drawGround() {
       ctx.fillStyle = "#222b3e";
       ctx.fillRect(-cameraX, groundY, worldLength+300, canvas.height-groundY);
       ctx.fillStyle = "#495980";
       ctx.fillRect(-cameraX, groundY+30, worldLength+300, canvas.height-groundY-30);
-      for(let i=0;i<35;i++){
+      for(let i=0;i<40;i++){
         ctx.fillStyle = "#94a3b8";
         ctx.fillRect(i*100-30-cameraX, groundY+30, 30, 7);
       }
     }
 
     function drawWords() {
-      wordPositions.forEach((wp) => {
+      wordPositions.forEach((wp, k) => {
         if (!wp.found) {
           ctx.save();
-          ctx.font = "2.5rem 'Noto Sans Hebrew', sans-serif";
-          ctx.fillStyle = "#fbbf24";
+          ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif";
           ctx.textAlign = "center";
           ctx.shadowColor = "#facc15";
-          ctx.shadowBlur = 7;
+          ctx.shadowBlur = wp.type==="power"?15:7;
+          ctx.globalAlpha = wp.type==="power"?0.93:0.82;
+          ctx.fillStyle = wp.type==="power"?"#ffe34d":"#fbbf24";
           ctx.fillText(WORDS[wp.idx].he, wp.x - cameraX + 20, wp.y + 35);
           ctx.restore();
         }
+      });
+    }
+
+    function drawViloes() {
+      viloes.forEach((v)=>{
+        if (!v.alive) return;
+        let px = v.x-cameraX+20, py = v.y+30;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(px, py-38, 18, 0, 2*Math.PI);
+        ctx.closePath();
+        ctx.clip();
+        if (charImages[2]) ctx.drawImage(charImages[2], px-18, py-56, 36,36);
+        ctx.restore();
+        // Corpo preto longo
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(px-17, py-19);
+        ctx.lineTo(px+17, py-19);
+        ctx.lineTo(px+12, py+37);
+        ctx.lineTo(px-12, py+37);
+        ctx.closePath();
+        ctx.fillStyle = "#232323";
+        ctx.fill();
+        // Faixa branca (cinto)
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(px-10, py+14, 20, 5);
+        ctx.restore();
+      });
+    }
+
+    function drawCruzes() {
+      cruzes.forEach(cr=>{
+        if (!cr.active) return;
+        ctx.save();
+        ctx.translate(cr.x-cameraX+player.width/2, cr.y+player.height/2);
+        ctx.rotate(cr.dir*0.08);
+        ctx.globalAlpha = 0.9;
+        // Cruz branca com borda dourada
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#ffe469";
+        ctx.beginPath();
+        ctx.moveTo(-7,0); ctx.lineTo(7,0);
+        ctx.moveTo(0,-11); ctx.lineTo(0,11);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#fff";
+        ctx.beginPath();
+        ctx.moveTo(-6,0); ctx.lineTo(6,0);
+        ctx.moveTo(0,-10); ctx.lineTo(0,10);
+        ctx.stroke();
+        ctx.restore();
       });
     }
 
@@ -458,6 +500,8 @@
       drawBackground();
       drawGround();
       drawWords();
+      drawViloes();
+      drawCruzes();
       drawPlayer();
       ctx.save();
       ctx.globalAlpha = 0.15;
@@ -471,9 +515,8 @@
       player.vx = 0;
       if (keys["ArrowLeft"]) { player.vx = -player.speed; player.direction = -1;}
       if (keys["ArrowRight"]) { player.vx = +player.speed; player.direction = 1;}
-      if ((keys["ArrowUp"]) && player.onGround) {
-        player.vy = player.jumpPower;
-        player.onGround = false;
+      if (keys["ArrowUp"] && player.onGround) {
+        player.vy = player.jumpPower; player.onGround = false;
       }
       player.vy += player.gravity;
       player.y += player.vy;
@@ -494,21 +537,112 @@
       for (let i = 0; i < wordPositions.length; i++) {
         let wp = wordPositions[i];
         if (!wp.found &&
-            player.x + player.width > wp.x &&
-            player.x < wp.x + 54 &&
-            player.y + player.height > wp.y &&
-            player.y < wp.y + 54) {
+          player.x + player.width > wp.x &&
+          player.x < wp.x + 54 &&
+          player.y + player.height > wp.y &&
+          player.y < wp.y + 54) {
           currentWordIdx = i;
-          triggerChallenge(wp.idx);
-          break;
+          if (wp.type==="power") {
+            // YAD = Power up
+            points += 100; brilho = 90;
+            document.getElementById('scoreValue').textContent = points;
+            wp.found = true;
+            setTimeout(()=>{ brilho=0; },3000);
+            return;
+          } else {
+            triggerChallenge(wp.idx);
+            break;
+          }
         }
       }
     }
 
-    // DESAFIO DE PALAVRA
+    function checkVilaoCollision() {
+      if (challengeActive) return;
+      viloes.forEach((v) => {
+        if (!v.alive) return;
+        if (
+          player.x + player.width > v.x - 24 &&
+          player.x < v.x + 24 &&
+          player.y + player.height > v.y - 5 &&
+          player.y < v.y + 50
+        ) {
+          if (v.cooldown <= 0) {
+            points -= 50;
+            updatePoints();
+            v.cooldown = 50;
+            brilho = 0;
+            if (points < 0) {
+              loseLife();
+            }
+          }
+        }
+        if (v.cooldown > 0) v.cooldown--;
+      });
+    }
+
+    function checkCruzCollision() {
+      cruzes.forEach(cr=>{
+        if (!cr.active) return;
+        viloes.forEach((v)=>{
+          if (!v.alive) return;
+          if (
+            cr.x + 15 > v.x - 20 &&
+            cr.x < v.x + 20 &&
+            cr.y + 20 > v.y &&
+            cr.y < v.y + 50
+          ) {
+            v.alive = false;
+            cr.active = false;
+          }
+        });
+      });
+    }
+
+    function updatePoints() {
+      document.getElementById('scoreValue').textContent = Math.max(0, points);
+    }
+
+    function loseLife() {
+      vidas--;
+      updateLives();
+      if (vidas > 0) {
+        // Reinicia jogador e pontos
+        player.x = 80; player.y = 320; points = 200; updatePoints();
+      } else {
+        // Game Over
+        endGameType = "over";
+        showEndModal();
+      }
+    }
+
+    function updateLives() {
+      let html = "";
+      for (let i=0; i<vidas; i++) html += `<span class="lives-heart">♥</span>`;
+      document.getElementById('lives').innerHTML = html;
+    }
+
+    // -- Disparo de cruz
+    function fireCruz() {
+      if (points<100) return;
+      cruzes.push({
+        x: player.x+(player.direction>0?26:-6), y: player.y+16,
+        vx: player.direction*11, dir: player.direction, active:true, t:0
+      });
+      points -= 100; updatePoints();
+    }
+
+    function updateCruzes() {
+      cruzes.forEach(cr=>{
+        if (!cr.active) return;
+        cr.x += cr.vx; cr.t++;
+        if (cr.x<0 || cr.x>worldLength || cr.t>60) cr.active = false;
+      });
+    }
+
+    // --- DESAFIO DE PALAVRA ---
     function triggerChallenge(wordIdx) {
-      challengeActive = true;
-      usedHint = false;
+      challengeActive = true; usedHint = false;
       document.getElementById('modal').classList.remove('hidden');
       document.getElementById('hebrewWord').textContent = WORDS[wordIdx].he;
       document.getElementById('answerInput').value = "";
@@ -565,7 +699,7 @@
       points += pts;
       wordsFound++;
       wordPositions[currentWordIdx].found = true;
-      document.getElementById('scoreValue').textContent = points;
+      updatePoints();
       document.getElementById('feedback').textContent = usedHint
         ? `Correto! +${pts} pts (com dica)`
         : `Correto! +${pts} pts`;
@@ -573,7 +707,9 @@
         document.getElementById('modal').classList.add('hidden');
         challengeActive = false;
         if (wordsFound === wordPositions.length) {
-          endGame();
+          // Fim de jogo feliz!
+          endGameType = "win";
+          showEndModal();
         }
       }, 600);
       clearInterval(challengeTimer);
@@ -587,32 +723,43 @@
         wordsFound++;
         wordPositions[currentWordIdx].found = true;
         if (wordsFound === wordPositions.length) {
-          endGame();
+          endGameType = "win";
+          showEndModal();
         }
       }, 1200);
       clearInterval(challengeTimer);
     }
 
-    function endGame() {
-      document.getElementById('finalScore').textContent = points;
-      document.getElementById('finalPlayer').textContent = playerName;
+    function showEndModal() {
       document.getElementById('endModal').classList.remove('hidden');
+      if (endGameType==="win") {
+        document.getElementById('endTitle').innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>';
+        document.getElementById('endMsg').textContent = "Parabéns, você venceu!";
+      } else {
+        document.getElementById('endTitle').textContent = "Game Over";
+        document.getElementById('endMsg').textContent = "Tente novamente!";
+      }
     }
 
+    // --- GAMELOOP ---
     function gameLoop() {
+      if (gameOver) return;
       if (!challengeActive) {
         updatePlayer();
+        updateCruzes();
         checkWordCollision();
+        checkVilaoCollision();
+        checkCruzCollision();
+        brilho = Math.max(0, brilho-1);
       }
       drawWorld();
       requestAnimationFrame(gameLoop);
     }
 
-    // ======= Controles de teclado (setas de direção) =======
+    // --- CONTROLES ---
     document.addEventListener('keydown', function(e){
-      if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) {
-        keys[e.code] = true;
-      }
+      if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) keys[e.code] = true;
+      if (e.code==="Space" && !challengeActive) fireCruz();
       if (challengeActive && e.code === "Escape") {
         document.getElementById('modal').classList.add('hidden');
         challengeActive = false;
@@ -620,12 +767,10 @@
       }
     });
     document.addEventListener('keyup', function(e){
-      if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) {
-        keys[e.code] = false;
-      }
+      if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) keys[e.code] = false;
     });
 
-    // ======= Controles Touch (mobile) =======
+    // Controles Touch
     if (document.getElementById('btnLeft')) {
       let btns = [
         {id: 'btnLeft', code: 'ArrowLeft'},
@@ -633,34 +778,33 @@
         {id: 'btnUp', code: 'ArrowUp'}
       ];
       btns.forEach(({id, code}) => {
-        let btn = document.getElementById(id);
-        let timer;
+        let btn = document.getElementById(id); let timer;
         btn.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          keys[code] = true;
-          timer = setInterval(()=>{ keys[code]=true; }, 80);
+          e.preventDefault(); keys[code] = true; timer = setInterval(()=>{ keys[code]=true; }, 80);
         }, {passive: false});
         btn.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          keys[code] = false;
-          if (timer) clearInterval(timer);
+          e.preventDefault(); keys[code] = false; if (timer) clearInterval(timer);
         }, {passive: false});
-        btn.addEventListener('touchcancel', function(e) {
-          keys[code] = false;
-          if (timer) clearInterval(timer);
-        }, {passive: false});
+        btn.addEventListener('touchcancel', function(e) { keys[code] = false; if (timer) clearInterval(timer); }, {passive: false});
       });
+      // Botão de atirar
+      let btnFire = document.getElementById('btnFire');
+      btnFire.addEventListener('touchstart', function(e) {
+        e.preventDefault(); fireCruz();
+      }, {passive: false});
     }
 
-    // ======= Responsividade do Canvas =======
+    // --- INICIALIZAÇÃO ---
     function adjustCanvas() {
       let ww = Math.min(window.innerWidth-10, 900);
       let wh = Math.max(320, Math.min(window.innerHeight-100, 500));
-      canvas.width = ww;
-      canvas.height = wh;
+      canvas.width = ww; canvas.height = wh;
     }
     window.addEventListener('resize', adjustCanvas);
     adjustCanvas();
+
+    // Gera elementos e inicia!
+    setupMapElements();
   </script>
 </body>
 </html>
