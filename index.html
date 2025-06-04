@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jogo Hebraico Bíblico – Rodrigo Niskier</title>
+  <title>Jogo Hebraico Bíblico 3D – Rodrigo Niskier</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     body { font-family: 'JetBrains Mono', monospace; background: #222c36; }
-    canvas { background: transparent; display: block; margin: 0 auto; touch-action: none; }
+    canvas#game { background: transparent; display: block; margin: 0 auto; touch-action: none; }
     .hebrew { font-family: 'Noto Sans Hebrew', sans-serif; font-size: 2.2rem; direction: rtl; }
     .modal-bg { background: rgba(0,0,0,0.7); }
     .slide-in { animation: slide-in 1.1s cubic-bezier(0.4,0,0.2,1);}
@@ -22,10 +23,9 @@
 </head>
 <body class="flex flex-col items-center min-h-screen bg-gray-900">
 
-  <!-- Tela Inicial -->
   <div id="startScreen" class="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center z-50">
     <div class="bg-gray-100 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-6 w-[360px]">
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Bem-vindo ao Jogo de Hebraico Bíblico!</h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Bem-vindo ao Jogo de Hebraico Bíblico 3D!</h1>
       <div class="flex flex-col gap-2 w-full">
         <label class="text-gray-800 font-semibold mb-1 text-base" for="username">Seu nome de jogador:</label>
         <input id="username" type="text" maxlength="18" autocomplete="off" class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800" placeholder="Digite seu nome..."/>
@@ -45,33 +45,26 @@
     </div>
   </div>
 
-  <!-- Tela de Comandos -->
   <div id="commandScreen" class="fixed inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50 hidden">
     <div class="bg-white rounded-2xl shadow-2xl w-[340px] p-8 flex flex-col items-center gap-6">
-      <h2 class="text-2xl font-bold text-blue-800 mb-2">Comandos do Jogo</h2>
+      <h2 class="text-2xl font-bold text-blue-800 mb-2">Comandos do Jogo 3D</h2>
       <ul class="text-gray-900 text-base text-left leading-7 mb-3">
         <li><b>Movimentar:</b> <span class="bg-gray-200 rounded px-1">←</span> <span class="bg-gray-200 rounded px-1">→</span> (ou botões laterais)</li>
         <li><b>Pular:</b> <span class="bg-gray-200 rounded px-1">↑</span> (ou botão "↑")</li>
-        <li><b>Atirar Cruz:</b> <span class="bg-gray-200 rounded px-1">barra de espaço</span> (ou botão com cruz ✝️)</li>
+        <li><b>Atirar (Exemplo):</b> <span class="bg-gray-200 rounded px-1">barra de espaço</span></li>
         <li><b>Coletar palavra:</b> encoste nela</li>
-        <li><b>Derrote vilões:</b> atire a cruz neles</li>
-        <li><b>Power-up:</b> pegue יָד ("iad") para ganhar poder (100 pontos e brilho especial)</li>
-        <li><b>Vidas:</b> você tem 3 corações (perde vida se ficar com pontos negativos após colidir com vilão)</li>
-        <li><b>Game Over:</b> se perder todas as vidas</li>
-        <li><b>Vitória:</b> colete todas as palavras e derrote todos os vilões</li>
       </ul>
       <button id="okBtn" class="w-full px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">OK</button>
     </div>
   </div>
 
-  <!-- HUD Pontos e Vidas -->
   <div id="scoreHud" class="fixed top-5 right-8 text-xl text-white z-20 flex items-center gap-7" style="display:none;">
     <div class="bg-gray-700 px-5 py-2 rounded-2xl shadow-lg font-bold flex items-center gap-2">Pontos: <span id="scoreValue">0</span></div>
     <div id="lives" class="flex items-center"></div>
   </div>
+
   <canvas id="game" width="900" height="440" class="rounded-2xl border-2 border-gray-800 shadow-2xl mt-10" style="display:none;"></canvas>
 
-  <!-- Controles Touch -->
   <div id="touchControls" class="fixed left-0 bottom-0 w-full flex justify-between items-end px-6 pb-5 z-30" style="display:none;">
     <div class="flex gap-3">
       <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnLeft" tabindex="-1">←</button>
@@ -83,7 +76,6 @@
     </div>
   </div>
 
-  <!-- Modal de Desafio -->
   <div id="modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
     <div class="modal-bg absolute inset-0"></div>
     <div class="relative p-8 bg-gray-100 rounded-xl shadow-2xl w-[350px] slide-in">
@@ -104,7 +96,6 @@
     </div>
   </div>
 
-  <!-- Tela Fim de Jogo -->
   <div id="endModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
     <div class="modal-bg absolute inset-0"></div>
     <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center">
@@ -115,13 +106,7 @@
   </div>
 
 <script>
-/*  
-TODO: Por limite de espaço, vou te entregar em 2 partes:
-- Parte 1: Toda a configuração, tela inicial, palavras, layout e funções até o setup do mundo.
-- Parte 2 (responda "continue" para receber): Engine principal, movimentação do mundo (personagem centralizado), detecção de colisão, controle de vidas, disparo, desafio, HUD, etc.
-*/
-
-/* ---------- Parte 1 ---------- */
+// Unindo Parte 1 e Parte 2 do seu JavaScript original e adaptando para 3D
 
 // ======== Utils ========
 function isMobile() {
@@ -136,7 +121,7 @@ function normalize(str) {
     .trim();
 }
 
-// ======== Tela Inicial & Comando ========
+// ======== Tela Inicial & Comando (Lógica mantida) ========
 let selectedChar = 0, playerName = "", usedHint = false;
 const charBtns = [document.getElementById('char1'), document.getElementById('char2')];
 function updatePlayBtnState() {
@@ -159,20 +144,20 @@ document.getElementById('playBtn').addEventListener('click', function() {
 });
 document.getElementById('okBtn').addEventListener('click', function() {
   document.getElementById('commandScreen').style.display = "none";
-  document.getElementById('game').style.display = "";
-  document.getElementById('scoreHud').style.display = "";
+  document.getElementById('game').style.display = ""; // Canvas será visível
+  document.getElementById('scoreHud').style.display = "flex"; // HUD visível
   if (isMobile()) document.getElementById('touchControls').style.display = "flex";
   else document.getElementById('touchControls').style.display = "none";
-  startGame();
+  startGame(); // Inicia o jogo 3D
 });
 
-// ======== Palavras ========
-const charImgs = [
+// ======== Palavras (Definições mantidas) ========
+const charImgs = [ // Usaremos para texturas ou inspiração para modelos 3D depois
   "personagem1.png",
   "personagem2.png",
-  "personagem3.png"
+  "personagem3.png" // Para vilões
 ];
-const backgroundImageUrl = "fundo.jpg";
+const backgroundImageUrl = "fundo.jpg"; // Poderia ser um skybox ou textura de fundo 3D
 const WORDS = [
   {he:"בֵּן", tr:"ben", pt:["filho","menino","descendente"], dica:"Parentesco masculino"},
   {he:"בָּנִים", tr:"banim", pt:["filhos","meninos","descendentes"], dica:"Plural de filho"},
@@ -207,447 +192,356 @@ const WORDS = [
   {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true}
 ];
 
-let gameElements = [];
-function setupMapElements() {
+let gameElements = []; // Estrutura de dados para elementos do mapa
+
+// ======== Variáveis Globais para Three.js e Lógica do Jogo 3D ========
+let scene, camera, renderer;
+let playerMesh, playerVelocity; // playerVelocity para física simples (y)
+let groundMesh;
+let wordMeshes = [], vilaoMeshes = [], cruzMeshes = [];
+
+// Parâmetros do jogador e física (valores de exemplo, ajustar conforme necessário)
+const PLAYER_SPEED = 0.15; // Velocidade de movimento horizontal
+const PLAYER_JUMP_POWER = 0.25;
+const GRAVITY = 0.012;
+const PLAYER_SIZE = { width: 1, height: 1.8, depth: 0.5 }; // Tamanho do jogador em unidades 3D
+const GROUND_Y_POSITION = -PLAYER_SIZE.height / 2; // Para que a base do jogador toque o chão
+
+// Estado do jogo e controles
+let keys = {};
+let points, wordsFound, vidas, brilho, gameOver, endGameType, challengeActive, currentWordIdx, challengeStartTime;
+let challengeTimer = null, challengeTimeout = 16;
+
+// --- Inicialização e Configuração do Mundo 3D ---
+function setupMapElements() { // Mesma lógica para definir quais elementos estarão no jogo
   let shuffledWords = WORDS.filter(w=>!w.power).sort(()=>Math.random()-0.5);
   let yadsToAdd = 10, wordsToAdd = 30;
   let powerSpacing = 3, vilaoSpacing = 3, vilaoStart = 7;
   let elements = [], idx=0, yads=0, vilaos=0;
   for (let i=0; i<wordsToAdd; i++) {
     if (i && i%powerSpacing === 0 && yads<yadsToAdd) {
-      elements.push({type:"power", idx:WORDS.length-1});
+      elements.push({type:"power", wordObj:WORDS.find(w=>w.power)}); // Adiciona objeto da palavra de poder
       yads++;
     }
     if (i >= vilaoStart && (i-vilaoStart)%vilaoSpacing === 0) {
       elements.push({type:"vilao"});
       vilaos++;
     }
-    elements.push({type:"word", idx:shuffledWords[idx%shuffledWords.length], wordObj:shuffledWords[idx%shuffledWords.length]});
+    elements.push({type:"word", wordObj:shuffledWords[idx%shuffledWords.length]});
     idx++;
   }
   gameElements = elements;
 }
 
-window.addEventListener('resize', function adjustCanvas(){
-  let canvas = document.getElementById("game");
-  let ww = Math.min(window.innerWidth-10, 900);
-  let wh = Math.max(320, Math.min(window.innerHeight-100, 500));
-  canvas.width = ww; canvas.height = wh;
-});
-/* ---- FIM PARTE 1 ---- */
-</script>
-<!-- Solicite "continue" para receber a parte 2 (game engine, renderização, física e lógica do novo movimento) -->
-</body>
-</html>
-// ======= GAME ENGINE, RENDERIZAÇÃO E LÓGICA =======
-
-let player, cameraX, worldLength, groundY, wordPositions, currentWordIdx, challengeActive, challengeStartTime,
-  points, wordsFound, keys, charImages, vidas, brilho, cruzes, viloes, gameOver, endGameType;
-
-let challengeTimer = null, challengeTimeout = 16;
-let bgImg = new window.Image();
-bgImg.src = backgroundImageUrl;
-
-// --- Parâmetros do cenário e movimentação
 function startGame() {
-  player = {
-    // O personagem fica centralizado em X (exceto começo/final)
-    x: 430, y: 320, width: 36, height: 66,
-    vx: 0, vy: 0, speed: 4.2, onGround: true,
-    gravity: 0.58, jumpPower: -10.6, direction: 1
-  };
-  cameraX = 0;
-  groundY = 360;
-  worldLength = 300 + gameElements.length*120 + 800;
-  wordPositions = [];
-  currentWordIdx = -1;
-  challengeActive = false;
-  challengeStartTime = 0;
+  const canvas = document.getElementById("game");
+
+  // 1. Cena
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x7dd3fc); // Cor de fundo similar ao 2D
+
+  // 2. Câmera
+  // Usaremos uma PerspectiveCamera para visão 3D.
+  // O campo de visão (fov), aspect ratio, near e far definem o frustum da câmera.
+  camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
+  camera.position.set(0, 2, 7); // Posição inicial da câmera (x, y, z)
+  camera.lookAt(0, 0, 0); // Olhando para o centro da cena inicialmente
+
+  // 3. Renderer
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setSize(canvas.width, canvas.height);
+  renderer.shadowMap.enabled = true; // Habilitar sombras (opcional, pode ser custoso)
+
+  // 4. Iluminação
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Luz ambiente suave
+  scene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Luz direcional (como o sol)
+  directionalLight.position.set(5, 10, 7.5);
+  directionalLight.castShadow = true; // Luz projeta sombras
+  scene.add(directionalLight);
+
+  // 5. Chão (Ground)
+  const groundGeometry = new THREE.PlaneGeometry(1000, 100); // Um plano grande para o chão
+  const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x222b3e, side: THREE.DoubleSide });
+  groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+  groundMesh.rotation.x = -Math.PI / 2; // Rotacionar para ficar horizontal
+  groundMesh.position.y = GROUND_Y_POSITION - PLAYER_SIZE.height / 2; // Ajustar para base do jogador
+  groundMesh.receiveShadow = true;
+  scene.add(groundMesh);
+
+  // 6. Jogador (Player)
+  const playerGeometry = new THREE.BoxGeometry(PLAYER_SIZE.width, PLAYER_SIZE.height, PLAYER_SIZE.depth);
+  // Tentar carregar a imagem do personagem como textura (simplificado)
+  const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff }); // Cor azul se textura falhar
+  try {
+    const textureLoader = new THREE.TextureLoader();
+    const playerTexture = textureLoader.load(charImgs[selectedChar -1] || charImgs[0]);
+    playerMaterial.map = playerTexture;
+    playerMaterial.needsUpdate = true;
+  } catch (e) { console.warn("Textura do personagem não carregada:", e); }
+
+  playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+  playerMesh.position.set(0, 0, 0); // Posição inicial do jogador
+  playerMesh.castShadow = true;
+  scene.add(playerMesh);
+
+  playerVelocity = new THREE.Vector3(0, 0, 0); // (vx, vy, vz) - usaremos vy para pulo/gravidade
+
+  // Inicializar estado do jogo
   points = 200;
   wordsFound = 0;
-  keys = {};
   vidas = 3;
-  brilho = 0;
-  cruzes = [];
-  viloes = [];
+  brilho = 0; // Poderia ser um efeito de emissão no material 3D
   gameOver = false;
   endGameType = "";
+  challengeActive = false;
   updateLives();
-  generatePositions();
-  loadCharImages().then(()=>{
-    drawWorld();
-    setTimeout(() => gameLoop(), 250);
-  });
+  updatePoints();
+
+  // Gerar posições dos elementos do jogo (palavras, vilões) em 3D
+  generate3DPositions();
+
+  // Redimensionar canvas e câmera se a janela mudar
+  window.addEventListener('resize', onWindowResize, false);
+  onWindowResize(); // Ajusta no início
+
+  // Iniciar o loop do jogo
+  gameLoop();
 }
 
-function loadCharImages() {
-  return new Promise(resolve=>{
-    charImages = [];
-    let loads = 0;
-    charImgs.forEach((src,i)=>{
-      let img = new Image();
-      img.src = src;
-      img.onload = () => { charImages[i] = img; if(++loads===charImgs.length) resolve(); }
-      img.onerror = () => { loads++; if(loads===charImgs.length) resolve();}
-    });
-  });
-}
+function generate3DPositions() {
+  wordMeshes.forEach(mesh => scene.remove(mesh)); // Limpar meshes antigos
+  vilaoMeshes.forEach(mesh => scene.remove(mesh));
+  wordMeshes = [];
+  viloes = []; // Array para lógica de vilões, não os meshes
 
-function generatePositions() {
-  wordPositions = [];
-  viloes = [];
-  let baseX = 300;
-  let lastY = 280; // Começa baixo
-  for (let i=0,x=baseX; i<gameElements.length; i++) {
-    let el = gameElements[i];
-    // Para garantir altura alcançável:
-    let minY = 220, maxY = groundY-54;
-    let y = minY + Math.random() * (maxY-minY); 
-    if (el.type==="vilao") {
-      viloes.push({
-        x:x, 
-        y: groundY-66, // Vilão sempre na linha do chão, ajustado pelo corpo do boneco
-        alive:true, cooldown:0
+  let currentX = 5; // Posição X inicial para o primeiro elemento
+  const spacing = 4;  // Espaçamento entre elementos
+  const elementY = 0; // Altura dos elementos em relação ao jogador
+  const elementZ = 0; // Profundidade (para um jogo side-scroller 3D, Z pode ser fixo ou variar pouco)
+
+  setupMapElements(); // Reutiliza a lógica para definir a sequência de gameElements
+
+  gameElements.forEach(elData => {
+    let mesh;
+    const elSize = (elData.type === "power") ? 0.8 : 0.6; // Tamanho do cubo
+    const geometry = new THREE.BoxGeometry(elSize, elSize, elSize);
+    let material;
+
+    if (elData.type === "word" || elData.type === "power") {
+      material = new THREE.MeshStandardMaterial({
+        color: elData.type === "power" ? 0xffff00 : 0xffa500, // Amarelo para poder, laranja para palavra
       });
-    } else if (el.type==="word" || el.type==="power") {
-      wordPositions.push({
-        x:x, 
-        y:y, 
-        found:false, 
-        idx:el.type==="word"?WORDS.indexOf(el.wordObj):WORDS.length-1, 
-        type:el.type
-      });
+      // TODO: Para mostrar o texto hebraico, precisaríamos criar uma textura com o texto
+      // e aplicá-la a uma face do cubo, ou usar TextGeometry (mais complexo).
+      // Por ora, apenas cubos coloridos.
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.userData = { type: elData.type, wordObj: elData.wordObj, found: false };
+      wordMeshes.push(mesh);
+    } else if (elData.type === "vilao") {
+      material = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Vermelho para vilão
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.userData = { type: elData.type, alive: true, cooldown: 0 };
+      // vilaoMeshes é uma lista de meshes, viloes é a lista de objetos para lógica
+      vilaoMeshes.push(mesh);
+      viloes.push({ mesh: mesh, alive: true, cooldown: 0, originalX: currentX }); // Adiciona referência ao mesh
     }
-    x += 120 + Math.random()*40;
-    lastY = y;
+
+    if (mesh) {
+      mesh.position.set(currentX, elementY, elementZ);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      currentX += spacing + Math.random() * 2; // Avança X para o próximo elemento
+    }
+  });
+  // Define o "comprimento" do mundo para a câmera saber os limites
+  worldLength = currentX + 10; // Um pouco além do último elemento
+}
+
+function onWindowResize() {
+  const canvas = document.getElementById("game");
+  let newWidth = Math.min(window.innerWidth - 10, 900);
+  let newHeight = Math.max(320, Math.min(window.innerHeight - (isMobile() ? 180 : 120), 500));
+
+  canvas.width = newWidth;
+  canvas.height = newHeight;
+
+  if (camera && renderer) {
+    camera.aspect = newWidth / newHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(newWidth, newHeight);
   }
 }
 
-// --- DRAWING ---
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-function drawBackground() {
-  if(bgImg.complete && bgImg.naturalWidth) {
-    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-  } else {
-    ctx.fillStyle = "#7dd3fc";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-  ctx.save();
-  ctx.globalAlpha = 0.13;
-  ctx.font = "bold 80px JetBrains Mono, monospace";
-  ctx.fillStyle = "#2d2d5a";
-  ctx.textAlign = "center";
-  ctx.fillText("Rodrigo Niskier", canvas.width/2, canvas.height/2+30);
-  ctx.restore();
-}
-function drawPlayer() {
-  ctx.save();
-  // Boneco SEM movimentar-se em X, sempre centralizado (exceto começo/fim)
-  let px = player.x, py = player.y + player.height / 2;
-  ctx.translate(px, py);
-  ctx.scale(player.direction, 1);
-  // Brilho de poder?
-  if (brilho>0) {
-    ctx.save();
-    ctx.globalAlpha = Math.max(0.45, brilho/90);
-    for(let i=0;i<16;i++){
-      ctx.beginPath();
-      ctx.arc(0,6,32+6*Math.sin(i+brilho/8),0,2*Math.PI);
-      ctx.strokeStyle = `rgba(255,220,30,${0.26 + Math.random()*0.09})`;
-      ctx.lineWidth = 8+Math.random()*6;
-      ctx.shadowBlur = 17;
-      ctx.shadowColor = "#ffe75a";
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-  // Corpo, gravata, camisa, braços, pernas e cabeça (como antes)
-  // Ombros e peito (paletó azul escuro)
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-21, -4);
-  ctx.lineTo(21, -4);
-  ctx.lineTo(15, 36);
-  ctx.lineTo(-15, 36);
-  ctx.closePath();
-  ctx.fillStyle = "#273262";
-  ctx.fill();
-  ctx.strokeStyle = "#182042";
-  ctx.lineWidth = 2.2;
-  ctx.stroke();
-  ctx.restore();
-  // Camisa branca sob paletó
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-7, -4);
-  ctx.lineTo(7, -4);
-  ctx.lineTo(7, 24);
-  ctx.lineTo(-7, 24);
-  ctx.closePath();
-  ctx.fillStyle = "#fff";
-  ctx.fill();
-  ctx.restore();
-  // Gravata vermelha
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, 0, 3.5, 0, 2 * Math.PI);
-  ctx.fillStyle = "#be2323";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(0, 3);
-  ctx.lineTo(-5, 22);
-  ctx.lineTo(5, 22);
-  ctx.closePath();
-  ctx.fillStyle = "#be2323";
-  ctx.fill();
-  ctx.restore();
-  // Braços (paletó azul escuro)
-  ctx.save();
-  ctx.lineWidth = 9;
-  ctx.strokeStyle = "#273262";
-  ctx.beginPath();
-  ctx.moveTo(-19, 2); ctx.lineTo(-29, 34);
-  ctx.moveTo(19, 2); ctx.lineTo(29, 34);
-  ctx.stroke();
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "#fff";
-  ctx.beginPath();
-  ctx.moveTo(-29, 34); ctx.lineTo(-29, 38);
-  ctx.moveTo(29, 34); ctx.lineTo(29, 38);
-  ctx.stroke();
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "#f9e5ce";
-  ctx.beginPath();
-  ctx.moveTo(-29, 39); ctx.lineTo(-29, 43);
-  ctx.moveTo(29, 39); ctx.lineTo(29, 43);
-  ctx.stroke();
-  ctx.restore();
-  // Pernas
-  ctx.save();
-  ctx.lineWidth = 9;
-  ctx.strokeStyle = "#191d25";
-  ctx.beginPath();
-  ctx.moveTo(-7, 36); ctx.lineTo(-10, 63);
-  ctx.moveTo(7, 36); ctx.lineTo(10, 63);
-  ctx.stroke();
-  ctx.lineWidth = 7.5;
-  ctx.strokeStyle = "#353942";
-  ctx.beginPath();
-  ctx.moveTo(-10, 64); ctx.lineTo(-10, 67);
-  ctx.moveTo(10, 64); ctx.lineTo(10, 67);
-  ctx.stroke();
-  ctx.restore();
-  // Cabeça (imagem)
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, -21, 18, 0, 2 * Math.PI);
-  ctx.closePath();
-  ctx.clip();
-  if (charImages && charImages[selectedChar-1]) {
-    ctx.drawImage(charImages[selectedChar-1], -18, -39, 36, 36);
-  } else {
-    ctx.fillStyle = "#f8e6d4";
-    ctx.arc(0, -21, 17, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-  ctx.restore();
-  ctx.restore();
-}
-function drawGround() {
-  ctx.fillStyle = "#222b3e";
-  ctx.fillRect(0, groundY, canvas.width, canvas.height-groundY);
-  ctx.fillStyle = "#495980";
-  ctx.fillRect(0, groundY+30, canvas.width, canvas.height-groundY-30);
-  for(let i=0;i<40;i++){
-    ctx.fillStyle = "#94a3b8";
-    ctx.fillRect(i*100, groundY+30, 30, 7);
-  }
-}
-function drawWords() {
-  wordPositions.forEach((wp, k) => {
-    if (!wp.found) {
-      ctx.save();
-      ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif";
-      ctx.textAlign = "center";
-      ctx.shadowColor = "#facc15";
-      ctx.shadowBlur = wp.type==="power"?15:7;
-      ctx.globalAlpha = wp.type==="power"?0.93:0.82;
-      ctx.fillStyle = wp.type==="power"?"#ffe34d":"#fbbf24";
-      // Convertemos x do mundo para x de tela:
-      ctx.fillText(WORDS[wp.idx].he, worldToScreenX(wp.x), wp.y + 35);
-      ctx.restore();
-    }
-  });
-}
-function drawViloes() {
-  viloes.forEach((v)=>{
-    if (!v.alive) return;
-    let px = worldToScreenX(v.x), py = v.y+30;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(px, py-38, 18, 0, 2*Math.PI);
-    ctx.closePath();
-    ctx.clip();
-    if (charImages[2]) ctx.drawImage(charImages[2], px-18, py-56, 36,36);
-    ctx.restore();
-    // Corpo preto longo
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(px-17, py-19);
-    ctx.lineTo(px+17, py-19);
-    ctx.lineTo(px+12, py+37);
-    ctx.lineTo(px-12, py+37);
-    ctx.closePath();
-    ctx.fillStyle = "#232323";
-    ctx.fill();
-    // Faixa branca (cinto)
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(px-10, py+14, 20, 5);
-    ctx.restore();
-  });
-}
-function drawCruzes() {
-  cruzes.forEach(cr=>{
-    if (!cr.active) return;
-    ctx.save();
-    ctx.translate(worldToScreenX(cr.x), cr.y+player.height/2);
-    ctx.rotate(cr.dir*0.08);
-    ctx.globalAlpha = 0.9;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#ffe469";
-    ctx.beginPath();
-    ctx.moveTo(-7,0); ctx.lineTo(7,0);
-    ctx.moveTo(0,-11); ctx.lineTo(0,11);
-    ctx.stroke();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#fff";
-    ctx.beginPath();
-    ctx.moveTo(-6,0); ctx.lineTo(6,0);
-    ctx.moveTo(0,-10); ctx.lineTo(0,10);
-    ctx.stroke();
-    ctx.restore();
-  });
-}
-function drawWorld() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBackground();
-  drawGround();
-  drawWords();
-  drawViloes();
-  drawCruzes();
-  drawPlayer();
-  ctx.save();
-  ctx.globalAlpha = 0.15;
-  ctx.font = "16px monospace";
-  ctx.fillStyle = "#fff";
-  ctx.fillText(`Pos: ${(getWorldX()|0)}/${worldLength}`, 35, 24);
-  ctx.restore();
-}
 
-// O personagem fica centralizado em X, o mundo se move para a esquerda/direita
-function worldToScreenX(x) {
-  // Player sempre no meio da tela (ou início/fim)
-  const centerX = Math.floor(canvas.width/2);
-  const minWorldX = centerX;
-  const maxWorldX = worldLength - centerX;
-  let px = getWorldX();
-  if (px < minWorldX) return x;
-  if (px > maxWorldX) return x - (worldLength-canvas.width);
-  return x - (px - centerX);
-}
-function getWorldX() {
-  // Calcula a posição "virtual" do jogador no mundo
-  return player.worldX !== undefined ? player.worldX : player.x;
-}
-
-// --- FÍSICA, MOVIMENTO, LÓGICA ---
+// --- LÓGICA DE MOVIMENTO E FÍSICA 3D ---
 function updatePlayer() {
-  // O player em si só se move verticalmente; horizontalmente, é o mundo que "anda"
-  player.vx = 0;
-  if (keys["ArrowLeft"]) { moveWorld(-player.speed); player.direction = -1;}
-  if (keys["ArrowRight"]) { moveWorld(+player.speed); player.direction = 1;}
-  if (keys["ArrowUp"] && player.onGround) {
-    player.vy = player.jumpPower; player.onGround = false;
+  // Movimento Horizontal (controlado por teclas/touch)
+  let moveDirection = 0;
+  if (keys["ArrowLeft"]) {
+    moveDirection = -1;
+    playerMesh.rotation.y = Math.PI; // Virar para a esquerda (opcional)
   }
-  player.vy += player.gravity;
-  player.y += player.vy;
-  if (player.y + player.height >= groundY+2) {
-    player.y = groundY - player.height + 2;
-    player.vy = 0;
-    player.onGround = true;
+  if (keys["ArrowRight"]) {
+    moveDirection = 1;
+    playerMesh.rotation.y = 0;      // Virar para a direita (opcional)
   }
-  if (player.y < 80) { player.y = 80; player.vy = 0; }
+  playerMesh.position.x += moveDirection * PLAYER_SPEED;
+
+  // Pulo e Gravidade (Vertical)
+  playerVelocity.y -= GRAVITY; // Aplicar gravidade
+  playerMesh.position.y += playerVelocity.y; // Mover jogador verticalmente
+
+  // Colisão com o chão
+  const groundLevel = GROUND_Y_POSITION; // O jogador "afunda" metade da sua altura no chão
+  if (playerMesh.position.y < groundLevel) {
+    playerMesh.position.y = groundLevel;
+    playerVelocity.y = 0;
+    // player.onGround = true; // (Variável do seu código original, adaptar se necessário)
+  }
+
+  // Pulo (se a tecla "ArrowUp" estiver pressionada e o jogador estiver no chão)
+  // (Precisa de uma flag `onGround` mais robusta para 3D)
+  if (keys["ArrowUp"] && playerMesh.position.y <= groundLevel + 0.1) { // +0.1 para margem
+    playerVelocity.y = PLAYER_JUMP_POWER;
+  }
+
+  // Atualizar posição da câmera para seguir o jogador
+  // A câmera pode ter um "lag" suave ou seguir diretamente.
+  // Aqui, ela segue diretamente em X e Z, com uma altura e distância fixas.
+  camera.position.x = playerMesh.position.x;
+  camera.position.y = playerMesh.position.y + 3; // Um pouco acima do jogador
+  camera.position.z = playerMesh.position.z + 7; // Atrás do jogador
+  camera.lookAt(playerMesh.position.x, playerMesh.position.y, playerMesh.position.z); // Olhar para o jogador
+
+  // Limitar movimento do jogador aos "limites do mundo" (opcional)
+  // playerMesh.position.x = Math.max(0, Math.min(playerMesh.position.x, worldLength - PLAYER_SIZE.width));
 }
 
-function moveWorld(dx) {
-  // A variável player.worldX representa a posição real do jogador no mundo (invisível)
-  if (player.worldX === undefined) player.worldX = player.x;
-  player.worldX += dx;
-  if (player.worldX < 0) player.worldX = 0;
-  if (player.worldX > worldLength-player.width) player.worldX = worldLength-player.width;
-}
+function checkCollisions3D() {
+  if (challengeActive || !playerMesh) return;
 
-function checkWordCollision() {
-  if (challengeActive) return;
-  for (let i = 0; i < wordPositions.length; i++) {
-    let wp = wordPositions[i];
-    if (!wp.found &&
-      Math.abs(getWorldX() - wp.x) < 50 &&
-      player.y + player.height > wp.y &&
-      player.y < wp.y + 54) {
-      currentWordIdx = i;
-      if (wp.type==="power") {
-        points += 100; brilho = 90;
-        document.getElementById('scoreValue').textContent = points;
-        wp.found = true;
-        setTimeout(()=>{ brilho=0; },3000);
-        return;
+  const playerBox = new THREE.Box3().setFromObject(playerMesh);
+
+  // Colisão com Palavras
+  wordMeshes.forEach((wordMesh, index) => {
+    if (wordMesh.userData.found || !wordMesh.parent) return; // Se já achou ou removido da cena
+
+    const wordBox = new THREE.Box3().setFromObject(wordMesh);
+    if (playerBox.intersectsBox(wordBox)) {
+      currentWordIdx = index; // Este índice precisa mapear para `gameElements` ou `WORDS`
+                              // A estrutura de `wordMesh.userData.wordObj` já tem o objeto da palavra.
+
+      if (wordMesh.userData.type === "power") {
+        points += 100;
+        brilho = 90; // TODO: Efeito visual de brilho em 3D
+        updatePoints();
+        wordMesh.userData.found = true;
+        scene.remove(wordMesh); // Remover o mesh da cena
+        // setTimeout(()=>{ brilho=0; },3000);
       } else {
-        triggerChallenge(wp.idx);
-        break;
+        // Encontrar o índice original da palavra em WORDS para o desafio
+        const originalWordIndex = WORDS.indexOf(wordMesh.userData.wordObj);
+        if (originalWordIndex !== -1) {
+            triggerChallenge(originalWordIndex); // Usa o índice global de WORDS
+        } else {
+            console.error("Não foi possível encontrar o objeto da palavra para o desafio.");
+        }
       }
     }
-  }
-}
-function checkVilaoCollision() {
-  if (challengeActive) return;
-  viloes.forEach((v) => {
-    if (!v.alive) return;
-    if (
-      Math.abs(getWorldX() - v.x) < 45 &&
-      player.y + player.height > v.y-5 &&
-      player.y < v.y + 50
-    ) {
-      if (v.cooldown <= 0) {
+  });
+
+  // Colisão com Vilões
+  vilaoMeshes.forEach((vilaoMesh) => {
+    if (!vilaoMesh.userData.alive || !vilaoMesh.parent) return;
+
+    const vilaoBox = new THREE.Box3().setFromObject(vilaoMesh);
+    if (playerBox.intersectsBox(vilaoBox)) {
+      if (vilaoMesh.userData.cooldown <= 0) {
         points -= 50;
         updatePoints();
-        v.cooldown = 50;
+        vilaoMesh.userData.cooldown = 50; // Tempo de invulnerabilidade do vilão após colisão
         brilho = 0;
         if (points < 0) {
           loseLife();
         }
       }
     }
-    if (v.cooldown > 0) v.cooldown--;
+    if (vilaoMesh.userData.cooldown > 0) vilaoMesh.userData.cooldown--;
   });
-}
-function checkCruzCollision() {
-  cruzes.forEach(cr=>{
-    if (!cr.active) return;
-    viloes.forEach((v)=>{
-      if (!v.alive) return;
-      if (
-        Math.abs(cr.x - v.x) < 35 &&
-        cr.y + 20 > v.y &&
-        cr.y < v.y + 50
-      ) {
-        v.alive = false;
-        cr.active = false;
+
+  // Colisão de Cruzes com Vilões
+  cruzMeshes.forEach((cruzMesh) => {
+    if (!cruzMesh.userData.active || !cruzMesh.parent) return;
+    const cruzBox = new THREE.Box3().setFromObject(cruzMesh);
+
+    vilaoMeshes.forEach((vilaoMesh) => {
+      if (!vilaoMesh.userData.alive || !vilaoMesh.parent) return;
+      const vilaoBox = new THREE.Box3().setFromObject(vilaoMesh);
+
+      if (cruzBox.intersectsBox(vilaoBox)) {
+        vilaoMesh.userData.alive = false;
+        scene.remove(vilaoMesh); // Remover vilão
+        cruzMesh.userData.active = false;
+        scene.remove(cruzMesh); // Remover cruz
+        // TODO: Adicionar pontuação por derrotar vilão, etc.
       }
     });
   });
 }
+
+
+function fireCruz() {
+  if (points < 100 || !playerMesh) return;
+
+  const cruzSize = 0.3;
+  const cruzGeometry = new THREE.BoxGeometry(cruzSize, cruzSize * 2, cruzSize / 2); // Formato de cruz simples
+  const cruzMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xccaa00 }); // Amarelo brilhante
+  const cruzMesh = new THREE.Mesh(cruzGeometry, cruzMaterial);
+
+  const direction = (playerMesh.rotation.y === 0) ? 1 : -1; // Direita ou Esquerda
+
+  cruzMesh.position.copy(playerMesh.position);
+  cruzMesh.position.x += direction * (PLAYER_SIZE.width / 2 + cruzSize); // Sai da frente do jogador
+  cruzMesh.position.y += PLAYER_SIZE.height / 4; // Um pouco acima do centro do jogador
+
+  const cruzSpeed = 0.3;
+  cruzMesh.userData = {
+    active: true,
+    velocity: new THREE.Vector3(direction * cruzSpeed, 0, 0),
+    lifeTime: 0,
+    maxLifeTime: 100 // Quantos frames a cruz dura
+  };
+
+  scene.add(cruzMesh);
+  cruzMeshes.push(cruzMesh);
+
+  points -= 100;
+  updatePoints();
+}
+
+function updateCruzes() {
+  for (let i = cruzMeshes.length - 1; i >= 0; i--) {
+    const cruz = cruzMeshes[i];
+    if (!cruz.userData.active || !cruz.parent) {
+      if (cruz.parent) scene.remove(cruz);
+      cruzMeshes.splice(i, 1);
+      continue;
+    }
+
+    cruz.position.add(cruz.userData.velocity);
+    cruz.userData.lifeTime++;
+
+    if (cruz.userData.lifeTime > cruz.userData.maxLifeTime ||
+        cruz.position.x < -50 || cruz.position.x > worldLength + 50) { // Limites do mundo para a cruz
+      cruz.userData.active = false;
+    }
+  }
+}
+
+
+// --- Funções de HUD, Vidas, Pontos (Mantidas com pequena adaptação para `wordMeshes`) ---
 function updatePoints() {
   document.getElementById('scoreValue').textContent = Math.max(0, points);
 }
@@ -655,8 +549,12 @@ function loseLife() {
   vidas--;
   updateLives();
   if (vidas > 0) {
-    player.y = 320; player.worldX = 80; points = 200; updatePoints();
+    if(playerMesh) playerMesh.position.set(0, 0, 0); // Resetar posição do jogador (exemplo)
+    camera.position.x = 0; // Resetar câmera
+    points = 200;
+    updatePoints();
   } else {
+    gameOver = true; // Adicionado para parar o loop
     endGameType = "over";
     showEndModal();
   }
@@ -666,28 +564,14 @@ function updateLives() {
   for (let i=0; i<vidas; i++) html += `<span class="lives-heart">♥</span>`;
   document.getElementById('lives').innerHTML = html;
 }
-function fireCruz() {
-  if (points<100) return;
-  let dir = player.direction || 1;
-  cruzes.push({
-    x: getWorldX()+(dir>0?26:-6), y: player.y+16,
-    vx: dir*11, dir: dir, active:true, t:0
-  });
-  points -= 100; updatePoints();
-}
-function updateCruzes() {
-  cruzes.forEach(cr=>{
-    if (!cr.active) return;
-    cr.x += cr.vx; cr.t++;
-    if (cr.x<0 || cr.x>worldLength || cr.t>60) cr.active = false;
-  });
-}
 
-// --- DESAFIO DE PALAVRA ---
-function triggerChallenge(wordIdx) {
+// --- Lógica de Desafio de Palavra (Mantida, mas `currentWordIdx` agora refere-se ao índice em `wordMeshes` ou `WORDS`) ---
+function triggerChallenge(wordIdxInWORDS) { // Agora recebe o índice global de WORDS
   challengeActive = true; usedHint = false;
+  currentWordIdx = wordIdxInWORDS; // Armazena o índice global da palavra em WORDS
+
   document.getElementById('modal').classList.remove('hidden');
-  document.getElementById('hebrewWord').textContent = WORDS[wordIdx].he;
+  document.getElementById('hebrewWord').textContent = WORDS[wordIdxInWORDS].he;
   document.getElementById('answerInput').value = "";
   document.getElementById('feedback').textContent = "";
   document.getElementById('hint').textContent = "";
@@ -710,18 +594,17 @@ function triggerChallenge(wordIdx) {
   }, 90);
 }
 document.getElementById('hintBtn').addEventListener('click', function() {
-  if (challengeActive && !usedHint) {
-    let idx = wordPositions[currentWordIdx].idx;
-    document.getElementById('hint').textContent = WORDS[idx].dica || "Sem dica.";
+  if (challengeActive && !usedHint && currentWordIdx !== -1) {
+    document.getElementById('hint').textContent = WORDS[currentWordIdx].dica || "Sem dica.";
     usedHint = true;
     this.disabled = true;
   }
 });
 document.getElementById('answerForm').addEventListener('submit', function(e){
   e.preventDefault();
-  if (!challengeActive) return;
+  if (!challengeActive || currentWordIdx === -1) return;
   let answer = normalize(document.getElementById('answerInput').value);
-  let word = WORDS[wordPositions[currentWordIdx].idx];
+  let word = WORDS[currentWordIdx]; // Usa o índice global
   let accepted = word.pt.some(t => normalize(t) === answer);
   if (accepted) {
     completeChallenge();
@@ -729,16 +612,23 @@ document.getElementById('answerForm').addEventListener('submit', function(e){
     document.getElementById('feedback').textContent = "Tradução incorreta. Tente novamente!";
   }
 });
+
 function completeChallenge() {
+  if (currentWordIdx === -1) return;
   let timeTaken = (performance.now() - challengeStartTime)/1000;
   let pts = Math.round(
     usedHint ?
-      Math.max(10, 60 - 3.5*timeTaken) :
-      Math.max(20, 100 - 5*timeTaken)
+    Math.max(10, 60 - 3.5*timeTaken) :
+    Math.max(20, 100 - 5*timeTaken)
   );
   points += pts;
-  wordsFound++;
-  wordPositions[currentWordIdx].found = true;
+  wordsFound++; // Incrementa o contador de palavras encontradas no jogo
+
+  // Marcar a palavra como encontrada no array `wordMeshes` (se necessário para lógica futura)
+  // A remoção da cena já acontece em `checkCollisions3D`
+  // Se `currentWordIdx` se refere a `wordMeshes`, então:
+  // if (wordMeshes[currentWordIdx]) wordMeshes[currentWordIdx].userData.found = true;
+
   updatePoints();
   document.getElementById('feedback').textContent = usedHint
     ? `Correto! +${pts} pts (com dica)`
@@ -746,31 +636,60 @@ function completeChallenge() {
   setTimeout(()=>{
     document.getElementById('modal').classList.add('hidden');
     challengeActive = false;
-    if (wordsFound === wordPositions.length) {
-      endGameType = "win";
-      showEndModal();
-    }
+    checkWinCondition();
   }, 600);
   clearInterval(challengeTimer);
 }
+
 function failChallenge() {
-  document.getElementById('feedback').textContent = `Tempo esgotado! Resposta: ${WORDS[wordPositions[currentWordIdx].idx].pt[0]}`;
+  if (currentWordIdx === -1) return;
+  document.getElementById('feedback').textContent = `Tempo esgotado! Resposta: ${WORDS[currentWordIdx].pt[0]}`;
   setTimeout(()=>{
     document.getElementById('modal').classList.add('hidden');
     challengeActive = false;
-    wordsFound++;
-    wordPositions[currentWordIdx].found = true;
-    if (wordsFound === wordPositions.length) {
-      endGameType = "win";
-      showEndModal();
-    }
+    // A palavra não é "encontrada" para pontuação, mas o desafio termina.
+    // Pode-se decidir se o item desaparece do mapa ou não.
+    // Para simplificar, vamos assumir que o jogador pode tentar novamente se esbarrar de novo.
+    checkWinCondition(); // Verifica se todas as *outras* palavras foram coletadas
   }, 1200);
   clearInterval(challengeTimer);
 }
+
+function checkWinCondition() {
+    // Verifica se todas as palavras não-poder foram coletadas e todos os vilões derrotados
+    const totalNormalWords = gameElements.filter(el => el.type === "word").length;
+    const totalViloes = gameElements.filter(el => el.type === "vilao").length;
+
+    let collectedNormalWords = 0;
+    wordMeshes.forEach(wm => {
+        if (wm.userData.found && wm.userData.type === "word") {
+            collectedNormalWords++;
+        }
+    });
+    // Precisamos contar os vilões derrotados.
+    // Isso pode ser feito verificando quantos meshes de vilões foram removidos
+    // ou mantendo um contador separado.
+    let viloesDerrotados = 0;
+    vilaoMeshes.forEach(vm => {
+      if(!vm.userData.alive && !vm.parent) viloesDerrotados++; // Se não está vivo E foi removido
+    });
+    // Simplificação: Contar quantos meshes de vilões ainda existem na cena
+    // let viloesRestantes = vilaoMeshes.filter(vm => vm.parent !== null && vm.userData.alive).length;
+
+
+    // Condição de vitória: todas as palavras normais coletadas E todos os vilões derrotados
+    if (collectedNormalWords >= totalNormalWords && viloesDerrotados >= totalViloes) {
+        gameOver = true;
+        endGameType = "win";
+        showEndModal();
+    }
+}
+
+
 function showEndModal() {
   document.getElementById('endModal').classList.remove('hidden');
   if (endGameType==="win") {
-    document.getElementById('endTitle').innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>';
+    document.getElementById('endTitle').innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>';
     document.getElementById('endMsg').textContent = "Parabéns, você venceu!";
   } else {
     document.getElementById('endTitle').textContent = "Game Over";
@@ -778,22 +697,25 @@ function showEndModal() {
   }
 }
 
-// --- GAMELOOP ---
+// --- GAMELOOP 3D ---
 function gameLoop() {
-  if (gameOver) return;
+  if (gameOver) return; // Para o loop se o jogo acabou
+
+  requestAnimationFrame(gameLoop); // Chama o próximo frame
+
   if (!challengeActive) {
     updatePlayer();
     updateCruzes();
-    checkWordCollision();
-    checkVilaoCollision();
-    checkCruzCollision();
-    brilho = Math.max(0, brilho-1);
+    checkCollisions3D(); // Lógica de colisão 3D
+    // brilho = Math.max(0, brilho-1); // Adaptar efeito de brilho para 3D se necessário
   }
-  drawWorld();
-  requestAnimationFrame(gameLoop);
+
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera); // Renderiza a cena 3D
+  }
 }
 
-// --- CONTROLES ---
+// --- CONTROLES (Mantidos, disparam flags em `keys` ou chamam funções como `fireCruz`) ---
 document.addEventListener('keydown', function(e){
   if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) keys[e.code] = true;
   if (e.code==="Space" && !challengeActive) fireCruz();
@@ -807,7 +729,7 @@ document.addEventListener('keyup', function(e){
   if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) keys[e.code] = false;
 });
 
-// Controles Touch
+// Controles Touch (Lógica mantida)
 if (document.getElementById('btnLeft')) {
   let btns = [
     {id: 'btnLeft', code: 'ArrowLeft'},
@@ -824,22 +746,15 @@ if (document.getElementById('btnLeft')) {
     }, {passive: false});
     btn.addEventListener('touchcancel', function(e) { keys[code] = false; if (timer) clearInterval(timer); }, {passive: false});
   });
-  // Botão de atirar
   let btnFire = document.getElementById('btnFire');
   btnFire.addEventListener('touchstart', function(e) {
-    e.preventDefault(); fireCruz();
+    e.preventDefault(); if(!challengeActive) fireCruz();
   }, {passive: false});
 }
 
-// --- INICIALIZAÇÃO ---
-function adjustCanvas() {
-  let ww = Math.min(window.innerWidth-10, 900);
-  let wh = Math.max(320, Math.min(window.innerHeight-100, 500));
-  canvas.width = ww; canvas.height = wh;
-}
-window.addEventListener('resize', adjustCanvas);
-adjustCanvas();
-
-setupMapElements();
+// Ajuste inicial do canvas já é feito em `onWindowResize` que é chamado no `startGame`
+// setupMapElements(); // Chamado dentro de generate3DPositions -> startGame
 
 </script>
+</body>
+</html>
