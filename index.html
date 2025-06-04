@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Ajustado)</title>
+  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Com Som)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
@@ -90,7 +90,7 @@
   </div>
 
   <div id="endModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-    <div class="modal-bg absolute inset-0"></div> <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center"> <h2 id="endTitleEl" class="text-2xl text-blue-800 font-bold mb-4"></h2> <p id="endMsgEl" class="mb-2 text-lg"></p> <button onclick="window.location.reload()" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button> </div>
+    <div class="modal-bg absolute inset-0"></div> <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center"> <h2 id="endTitleEl" class="text-2xl text-blue-800 font-bold mb-4"></h2> <p id="endMsgEl" class="mb-2 text-lg"></p> <button onclick="window.location.reload(); playSound('uiClick');" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button> </div>
   </div>
 
 <script>
@@ -102,6 +102,95 @@ const ctx = gameCanvas.getContext("2d");
 function isMobileDevice() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); }
 function normalize(str) { return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ãõçáéíóúàèìòùâêîôûäëïöü\s]/gi, '').trim(); }
 
+// ======== Configurações de Áudio ========
+const gameSounds = {};
+const soundUrls = {
+    // Substitua por URLs reais de arquivos de som (.mp3, .wav, .ogg)
+    background: "fundo.mp3",
+    jump: "pulo.mp3",
+    shoot: "ataque.mp3",
+    collectWord: "ataque.mp3",
+    collectPower: "iad.mp3",
+    playerHit: "ataque.mp3",
+    vilaoDefeated: "fariseu.mp3",
+    uiClick: "clique.mp3" // Som para cliques em botões
+};
+
+let audioContext = null; // Para habilitar áudio após interação do usuário
+let soundsLoaded = false;
+
+function initAudioContext() {
+    if (!audioContext && typeof AudioContext !== 'undefined') {
+        audioContext = new AudioContext();
+    } else if (!audioContext && typeof webkitAudioContext !== 'undefined') { // Safari
+        audioContext = new webkitAudioContext();
+    }
+}
+
+function loadSounds() {
+    if (soundsLoaded) return;
+    let soundsToLoadCount = Object.keys(soundUrls).length;
+    let loadedSoundsCount = 0;
+
+    for (const key in soundUrls) {
+        if (soundUrls[key] && !soundUrls[key].startsWith("URL_DO_SEU_SOM")) { // Carrega apenas se URL não for placeholder
+            gameSounds[key] = new Audio(soundUrls[key]);
+            gameSounds[key].oncanplaythrough = () => {
+                loadedSoundsCount++;
+                if (loadedSoundsCount >= soundsToLoadCount) {
+                    soundsLoaded = true;
+                    console.log("Todos os sons carregados.");
+                }
+            };
+            gameSounds[key].onerror = () => {
+                console.warn(`Erro ao carregar som: ${key} (${soundUrls[key]})`);
+                loadedSoundsCount++; // Conta como "carregado" para não bloquear
+                 if (loadedSoundsCount >= soundsToLoadCount) {
+                    soundsLoaded = true;
+                }
+            };
+
+            if (key === 'background') {
+                gameSounds[key].loop = true;
+                gameSounds[key].volume = 0.25; // Volume mais baixo para fundo
+            } else {
+                gameSounds[key].volume = 0.6;
+            }
+             gameSounds[key].load(); // Inicia o carregamento
+        } else {
+            console.warn(`URL do som '${key}' não definida ou é placeholder.`);
+            soundsToLoadCount--; // Não espera por este som
+             if (loadedSoundsCount >= soundsToLoadCount) {
+                soundsLoaded = true;
+            }
+        }
+    }
+    if (soundsToLoadCount === 0) soundsLoaded = true; // Caso nenhuma URL válida seja fornecida
+}
+
+function playSound(soundName, volume = -1) {
+    // Garante que o AudioContext foi iniciado por uma interação do usuário
+    if (!audioContext && (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined')) {
+        initAudioContext();
+    }
+    // Se o AudioContext ainda não está rodando (ex: em alguns navegadores móveis), tenta resumir
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+
+    if (gameSounds[soundName] && gameSounds[soundName].src && !gameSounds[soundName].src.startsWith("blob:URL_DO_SEU_SOM")) { // Verifica se o src é válido
+        gameSounds[soundName].currentTime = 0;
+        if (volume !== -1) { // Permite sobrescrever o volume padrão
+            gameSounds[soundName].volume = Math.max(0, Math.min(1, volume));
+        }
+        gameSounds[soundName].play().catch(error => {
+            // Erros de play() geralmente ocorrem se o usuário não interagiu com a página ainda.
+            // console.warn(`Não foi possível tocar o som "${soundName}": `, error);
+        });
+    }
+}
+
+
 // ======== Configurações e Estado do Jogo (Mantido) ========
 let selectedChar = 0; let playerName = ""; let usedHint = false; const charOptionBtns = [char1Btn, char2Btn];
 const charImgsPaths = ["personagem1.png", "personagem2.png", "personagem3.png"];
@@ -109,103 +198,67 @@ const backgroundImageUrl = "fundo.jpg"; const WORDS_DATA = [ {he:"בֵּן", tr:
 let gameElementsOnMap = []; let player, cameraX, worldLength, groundY, currentChallengeWordMapIndex, challengeActive, challengeStartTime, points, wordsFoundCorrectly, viloesDefeated, keys, loadedCharImages, vidas, playerGlowEffect, projectiles, isGameOver, gameOutcomeType, wordsToWin, viloesToWin;
 let challengeTimerInterval = null; const CHALLENGE_TIMEOUT_SECONDS = 16; const bgGameImage = new Image(); bgGameImage.src = backgroundImageUrl;
 
-// ======== Lógica da Tela Inicial e Comandos (Mantida) ========
+// ======== Lógica da Tela Inicial e Comandos ========
 function updatePlayButtonState() { playBtn.disabled = !(playerName.length > 0 && selectedChar > 0); }
-charOptionBtns.forEach((btn, idx) => { btn.addEventListener('click', () => { selectedChar = idx + 1; charOptionBtns.forEach((b, j) => b.classList.toggle('selected', j === idx)); updatePlayButtonState(); }); });
+charOptionBtns.forEach((btn, idx) => { btn.addEventListener('click', () => { playSound('uiClick', 0.5); selectedChar = idx + 1; charOptionBtns.forEach((b, j) => b.classList.toggle('selected', j === idx)); updatePlayButtonState(); }); });
 usernameInput.addEventListener('input', function() { playerName = this.value.trim(); updatePlayButtonState(); });
-playBtn.addEventListener('click', () => { startScreen.style.display = "none"; commandScreen.style.display = "flex"; });
-okBtn.addEventListener('click', () => { commandScreen.style.display = "none"; gameCanvas.style.display = "block"; scoreHud.style.display = "flex"; touchControls.style.display = isMobileDevice() ? "flex" : "none"; initializeGame(); });
+playBtn.addEventListener('click', () => { playSound('uiClick'); startScreen.style.display = "none"; commandScreen.style.display = "flex"; });
+okBtn.addEventListener('click', () => {
+  playSound('uiClick');
+  initAudioContext(); // Tenta iniciar/resumir o AudioContext com a interação do usuário
+  if (gameSounds.background && gameSounds.background.src && !gameSounds.background.src.startsWith("blob:URL_DO_SEU_SOM")) {
+        gameSounds.background.play().catch(e => console.warn("Música de fundo não pôde iniciar:", e));
+  }
+  commandScreen.style.display = "none"; gameCanvas.style.display = "block"; scoreHud.style.display = "flex"; touchControls.style.display = isMobileDevice() ? "flex" : "none";
+  initializeGame();
+});
 
-// ======== Configuração do Jogo e Elementos do Mapa (Ajustada para Novas Regras) ========
+// ======== Configuração do Jogo e Elementos do Mapa (Mantida) ========
 function setupMapElements() {
-    gameElementsOnMap = [];
-    wordsToWin = 0;
-    viloesToWin = 0;
-
+    gameElementsOnMap = []; wordsToWin = 0; viloesToWin = 0;
     const normalWordsPool = WORDS_DATA.filter(w => !w.power).sort(() => 0.5 - Math.random());
     const yadWordEntry = WORDS_DATA.find(w => w.power);
     const yadWordDataIndex = yadWordEntry ? WORDS_DATA.indexOf(yadWordEntry) : -1;
-
-    let normalWordsPlacedInCycle = 0; // Contador para regras de YAD e Vilão dentro do ciclo atual
-    let totalNormalWordsEverPlaced = 0; 
-    
-    const MIN_NORMAL_WORDS_TARGET = 30; 
-    let currentNormalWordPoolIndex = 0;
-
-    let isFirstYadPlaced = false;
-    let isFirstVilaoPlaced = false;
-
+    let normalWordsPlacedInCycle = 0; let totalNormalWordsEverPlaced = 0; 
+    const MIN_NORMAL_WORDS_TARGET = 30; let currentNormalWordPoolIndex = 0;
+    let isFirstYadPlaced = false; let isFirstVilaoPlaced = false;
     while (currentNormalWordPoolIndex < MIN_NORMAL_WORDS_TARGET || gameElementsOnMap.length < MIN_NORMAL_WORDS_TARGET + 5) {
         let elementPushedThisTurn = false;
-
-        // Lógica para YAD (Power-up)
         if (yadWordDataIndex !== -1) {
-            if (!isFirstYadPlaced && totalNormalWordsEverPlaced === 3) {
+            if (!isFirstYadPlaced && totalNormalWordsEverPlaced === 3) { 
                 gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
-                isFirstYadPlaced = true;
-                normalWordsPlacedInCycle = 0; // Reseta ciclo para YAD/Vilão
-                elementPushedThisTurn = true;
+                isFirstYadPlaced = true; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
             } else if (isFirstYadPlaced && normalWordsPlacedInCycle >= 7) {
                 gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
-                normalWordsPlacedInCycle = 0;
-                elementPushedThisTurn = true;
+                normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
             }
         }
-
-        // Lógica para VILÃO (Fariseu) - só se YAD não foi colocado
         if (!elementPushedThisTurn) {
-            if (!isFirstVilaoPlaced && totalNormalWordsEverPlaced >= 5) { // >=5 para aparecer *após* a quinta
-                gameElementsOnMap.push({ type: "vilao" });
-                viloesToWin++;
-                isFirstVilaoPlaced = true;
-                normalWordsPlacedInCycle = 0; // Reseta ciclo para YAD/Vilão
-                elementPushedThisTurn = true;
+            if (!isFirstVilaoPlaced && totalNormalWordsEverPlaced >= 5) { 
+                gameElementsOnMap.push({ type: "vilao" }); viloesToWin++;
+                isFirstVilaoPlaced = true; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
             } else if (isFirstVilaoPlaced && normalWordsPlacedInCycle >= 5) {
-                gameElementsOnMap.push({ type: "vilao" });
-                viloesToWin++;
-                normalWordsPlacedInCycle = 0;
-                elementPushedThisTurn = true;
+                gameElementsOnMap.push({ type: "vilao" }); viloesToWin++;
+                normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
             }
         }
-        
-        // Adiciona PALAVRA NORMAL se nada mais foi adicionado e ainda há palavras
         if (!elementPushedThisTurn && currentNormalWordPoolIndex < normalWordsPool.length) {
-            const wordData = normalWordsPool[currentNormalWordPoolIndex];
-            const globalIdx = WORDS_DATA.indexOf(wordData);
+            const wordData = normalWordsPool[currentNormalWordPoolIndex]; const globalIdx = WORDS_DATA.indexOf(wordData);
             gameElementsOnMap.push({ type: "word", wordDataIndex: globalIdx, wordObj: wordData });
-            
-            wordsToWin++;
-            normalWordsPlacedInCycle++;
-            totalNormalWordsEverPlaced++;
-            currentNormalWordPoolIndex++;
-            elementPushedThisTurn = true;
+            wordsToWin++; normalWordsPlacedInCycle++; totalNormalWordsEverPlaced++; currentNormalWordPoolIndex++; elementPushedThisTurn = true;
         }
-        
-        if (!elementPushedThisTurn && currentNormalWordPoolIndex >= normalWordsPool.length) {
-             // Se acabou o pool de palavras normais e não há mais itens de regra para colocar
-            if (isFirstYadPlaced && normalWordsPlacedInCycle < 7 && yadWordDataIndex !== -1 && gameElementsOnMap.filter(el=>el.type==="power").length < 5) { // Tenta colocar um último YAD se faltar pouco
-                 // Não força, apenas para o loop não ficar vazio se o pool acabar
-            } else if (isFirstVilaoPlaced && normalWordsPlacedInCycle < 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length < 7) {
-                 // Idem para vilão
-            } else {
-                break; // Sai do loop se não há mais o que fazer
-            }
-        }
+        if (!elementPushedThisTurn && currentNormalWordPoolIndex >= normalWordsPool.length) { break; }
     }
-     // Garante que haja pelo menos um vilão se a condição for atingida mas o loop parou cedo
-    if (viloesToWin === 0 && totalNormalWordsEverPlaced >= 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length === 0) {
-        gameElementsOnMap.push({ type: "vilao" });
-        viloesToWin++;
-    }
+    if (viloesToWin === 0 && totalNormalWordsEverPlaced >= 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length === 0) { gameElementsOnMap.push({ type: "vilao" }); viloesToWin++; }
 }
+
 
 // ======== Inicialização do Jogo (Mantida e ajustada) ========
 function initializeGame() {
   player = {
     x: gameCanvas.width / 2.5, y: 300, width: 38, height: 70,
     vx: 0, vy: 0, speed: 4.5, onGround: true, gravity: 0.6, jumpPower: -11.5, direction: 1,
-    worldX: gameCanvas.width / 2.5,
-    isHit: false, hitShakeDuration: 0 // Para efeito de tremor
+    worldX: gameCanvas.width / 2.5, isHit: false, hitShakeDuration: 0
   };
   cameraX = 0; groundY = gameCanvas.height * 0.82;
   setupMapElements(); positionGameElements();
@@ -214,7 +267,11 @@ function initializeGame() {
   keys = {}; vidas = 3; playerGlowEffect = 0; projectiles = [];
   isGameOver = false; gameOutcomeType = "";
   updateLivesDisplay(); updatePointsDisplay();
-  loadCharacterImages().then(() => { drawGameWorld(); gameLoop(); });
+  loadCharacterImages().then(() => { 
+    if (!soundsLoaded) loadSounds(); // Carrega sons se ainda não carregados
+    drawGameWorld(); 
+    gameLoop(); 
+  });
 }
 function loadCharacterImages() { /* ... (código mantido) ... */ 
   return new Promise(resolve => {
@@ -228,132 +285,102 @@ function loadCharacterImages() { /* ... (código mantido) ... */
     });
   });
 }
-function positionGameElements() { /* ... (código mantido, vilão já posicionado no chão) ... */ 
+function positionGameElements() { 
   let currentMapX = 400; 
-  const vilaoHeight = player.height * 0.95; 
+  // const baseVilaoHeight = player.height * 1.2; // Vilão base height
+
   gameElementsOnMap.forEach(element => {
     element.x = currentMapX; element.found = false; element.collidedThisFrame = false;
     if (element.type === "vilao") {
-      element.y = groundY - vilaoHeight; element.height = vilaoHeight; element.width = player.width * 0.9;
-      element.alive = true; element.cooldown = 0;
-      element.isAscending = false; element.ascendSpeedY = -2.5; element.currentAlpha = 1.0; // Para animação de subida
+        const vilaoImg = loadedCharImages[2]; // Imagem do personagem3.png
+        if (vilaoImg && vilaoImg.naturalWidth > 0) {
+            const aspectRatio = vilaoImg.naturalWidth / vilaoImg.naturalHeight;
+            element.height = player.height * 1.25; // Um pouco maior que o jogador (25%)
+            element.width = element.height * aspectRatio;
+        } else { // Fallback de tamanho se imagem não carregar
+            element.height = player.height * 1.2;
+            element.width = player.width * 1.1;
+        }
+        element.y = groundY - element.height; // Posiciona no chão
+        element.alive = true; element.cooldown = 0;
+        element.isAscending = false; element.ascendSpeedY = -2.0; element.currentAlpha = 1.0;
     } else if (element.type === "word" || element.type === "power") {
       const minY = groundY * 0.55; const maxY = groundY - 70; 
       element.y = minY + Math.random() * (maxY - minY);
       element.height = 54; element.width = 100; 
     }
-    currentMapX += 160 + Math.random() * 90; // Espaçamento aumentado
+    currentMapX += 170 + Math.random() * 100; // Espaçamento aumentado
   });
   worldLength = currentMapX + gameCanvas.width; 
 }
 
 // ======== Funções de Desenho no Canvas ========
-function drawGameBackground() { // Fundo Fixo e Estendido
+function drawGameBackground() { /* ... (mantido com fundo fixo) ... */ 
   if (bgGameImage.complete && bgGameImage.naturalWidth > 0) {
-    ctx.drawImage(bgGameImage, 0, 0, gameCanvas.width, gameCanvas.height); // Estica para preencher
+    ctx.drawImage(bgGameImage, 0, 0, gameCanvas.width, gameCanvas.height); 
   } else {
     ctx.fillStyle = "#7dd3fc"; ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
   }
 }
-
-function drawPlayerCharacter() {
+function drawPlayerCharacter() { /* ... (mantido com tremor e brilho) ... */ 
   ctx.save();
-  let playerRenderX = player.x;
-  let playerRenderY = player.y;
-
-  if (player.isHit && player.hitShakeDuration > 0) {
-    playerRenderX += (Math.random() - 0.5) * 8; // Amplitude do tremor
-    playerRenderY += (Math.random() - 0.5) * 6;
-  }
-  
+  let playerRenderX = player.x; let playerRenderY = player.y;
+  if (player.isHit && player.hitShakeDuration > 0) { playerRenderX += (Math.random() - 0.5) * 8; playerRenderY += (Math.random() - 0.5) * 6; }
   const playerScreenY = playerRenderY + player.height / 2; 
-  ctx.translate(playerRenderX, playerScreenY);
-  ctx.scale(player.direction, 1);
-
+  ctx.translate(playerRenderX, playerScreenY); ctx.scale(player.direction, 1);
   if (playerGlowEffect > 0) {
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, 0.3 + (playerGlowEffect / 180) * 0.7); // Brilho mais sutil e diminui
+    ctx.save(); ctx.globalAlpha = Math.min(1, 0.3 + (playerGlowEffect / 180) * 0.7); 
     const baseRadius = player.width * 0.8;
-    for (let i = 0; i < 8; i++) { // Menos arcos, mais performático
-      ctx.beginPath();
-      const angle = (i / 8) * (Math.PI * 2) + (Date.now() * 0.002); // Animação suave
-      const radius = baseRadius + 5 * Math.sin(angle * 2);
-      ctx.arc(0, 0, radius, 0, 2 * Math.PI); // Centralizado no jogador
-      ctx.strokeStyle = `rgba(255, 223, 100, ${0.4 + Math.random()*0.2})`;
-      ctx.lineWidth = 3 + Math.random() * 3;
-      ctx.stroke();
-    }
+    for (let i = 0; i < 8; i++) { ctx.beginPath(); const angle = (i / 8) * (Math.PI * 2) + (Date.now() * 0.002); const radius = baseRadius + 5 * Math.sin(angle * 2); ctx.arc(0, 0, radius, 0, 2 * Math.PI); ctx.strokeStyle = `rgba(255, 223, 100, ${0.4 + Math.random()*0.2})`; ctx.lineWidth = 3 + Math.random() * 3; ctx.stroke(); }
     ctx.restore();
   }
-
-  // Desenho do personagem (Mantido e verificado para cor da manga)
   const pWidth = player.width; const pHeight = player.height;
   ctx.fillStyle = "#191d25"; ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5;
-  ctx.fillRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35); 
-  ctx.strokeRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35);
-  ctx.fillRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
-  ctx.strokeRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
-  ctx.fillStyle = "#111";
-  ctx.fillRect(-pWidth*0.35, pHeight*0.45, pWidth*0.3, pWidth*0.15); 
-  ctx.fillRect(pWidth*0.05, pHeight*0.45, pWidth*0.3, pWidth*0.15); 
-
-  ctx.fillStyle = "#273262"; ctx.strokeStyle = "#182042"; // Cor do paletó (e mangas)
+  ctx.fillRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35); ctx.strokeRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35);
+  ctx.fillRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35); ctx.strokeRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
+  ctx.fillStyle = "#111"; ctx.fillRect(-pWidth*0.35, pHeight*0.45, pWidth*0.3, pWidth*0.15); ctx.fillRect(pWidth*0.05, pHeight*0.45, pWidth*0.3, pWidth*0.15); 
+  ctx.fillStyle = "#273262"; ctx.strokeStyle = "#182042"; 
   ctx.beginPath(); ctx.moveTo(-pWidth*0.4, -pHeight*0.3); ctx.lineTo(pWidth*0.4, -pHeight*0.3); ctx.lineTo(pWidth*0.3, pHeight*0.2); ctx.lineTo(-pWidth*0.3, pHeight*0.2); ctx.closePath(); ctx.fill();  ctx.stroke();
   ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-pWidth*0.15, -pHeight*0.3); ctx.lineTo(pWidth*0.15, -pHeight*0.3); ctx.lineTo(pWidth*0.15, -pHeight*0.05); ctx.lineTo(-pWidth*0.15, -pHeight*0.05); ctx.closePath(); ctx.fill();
   ctx.fillStyle = "#be2323"; ctx.beginPath(); ctx.arc(0, -pHeight*0.25, pWidth*0.08, 0, 2 * Math.PI); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, -pHeight*0.25 + pWidth*0.08); ctx.lineTo(-pWidth*0.1, pHeight*0.05); ctx.lineTo(pWidth*0.1, pHeight*0.05); ctx.closePath(); ctx.fill();
-  
-  ctx.fillStyle = "#273262"; // Garantindo que braços (mangas) são da cor do paletó
+  ctx.fillStyle = "#273262"; 
   ctx.beginPath(); ctx.moveTo(-pWidth*0.4, -pHeight*0.25); ctx.lineTo(-pWidth*0.55, pHeight*0.05); ctx.lineTo(-pWidth*0.45, pHeight*0.25); ctx.lineTo(-pWidth*0.3, pHeight*0.15); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(pWidth*0.4, -pHeight*0.25); ctx.lineTo(pWidth*0.55, pHeight*0.05); ctx.lineTo(pWidth*0.45, pHeight*0.25); ctx.lineTo(pWidth*0.3, pHeight*0.15); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle = "#f8e6d4";
   ctx.beginPath(); ctx.arc(-pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); ctx.fill();
   ctx.beginPath(); ctx.arc(pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); ctx.fill();
-
   const headRadius = pWidth * 0.35; const headYOffset = -pHeight * 0.35;
   ctx.beginPath(); ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI); ctx.closePath(); ctx.save(); ctx.clip();
   const playerImage = loadedCharImages && loadedCharImages[selectedChar - 1];
-  if (playerImage) { ctx.drawImage(playerImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2); } 
-  else { ctx.fillStyle = "#f8e6d4"; ctx.fill(); }
+  if (playerImage) { ctx.drawImage(playerImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2); } else { ctx.fillStyle = "#f8e6d4"; ctx.fill(); }
   ctx.restore(); ctx.strokeStyle = "#333"; ctx.lineWidth = 1; ctx.stroke();
   ctx.restore(); 
 }
-
-function drawGameGround() { // Chão sem os "pontos" (pedrinhas)
-  ctx.fillStyle = "#222b3e";
-  ctx.fillRect(0, groundY, gameCanvas.width, gameCanvas.height - groundY);
-  ctx.fillStyle = "#495980";
-  ctx.fillRect(0, groundY + 20, gameCanvas.width, gameCanvas.height - groundY - 20);
-
-  ctx.save();
-  ctx.font = "bold 16px 'JetBrains Mono', monospace";
-  ctx.fillStyle = "rgba(200, 200, 220, 0.3)"; 
-  ctx.textAlign = "center";
-  const nameYPos = groundY + gameCanvas.height * 0.12; 
-  const nameWidth = ctx.measureText("Rodrigo Niskier").width + 150; 
+function drawGameGround() { /* ... (mantido sem as pedrinhas e com nome) ... */ 
+  ctx.fillStyle = "#222b3e"; ctx.fillRect(0, groundY, gameCanvas.width, gameCanvas.height - groundY);
+  ctx.fillStyle = "#495980"; ctx.fillRect(0, groundY + 20, gameCanvas.width, gameCanvas.height - groundY - 20);
+  ctx.save(); ctx.font = "bold 16px 'JetBrains Mono', monospace"; ctx.fillStyle = "rgba(200, 200, 220, 0.3)"; ctx.textAlign = "center";
+  const nameYPos = groundY + gameCanvas.height * 0.12; const nameWidth = ctx.measureText("Rodrigo Niskier").width + 150; 
   const numNameRepeats = Math.ceil(gameCanvas.width / nameWidth) + 2;
-  for (let i = 0; i < numNameRepeats; i++) {
-      let nameX = (i * nameWidth) - (cameraX * 0.95 % nameWidth); 
-      if (nameX + nameWidth < 0) nameX += numNameRepeats * nameWidth; 
-      ctx.fillText("Rodrigo Niskier", nameX + nameWidth/2 - ctx.measureText("Rodrigo Niskier").width/2 , nameYPos);
-  }
+  for (let i = 0; i < numNameRepeats; i++) { let nameX = (i * nameWidth) - (cameraX * 0.95 % nameWidth); if (nameX + nameWidth < 0) nameX += numNameRepeats * nameWidth; ctx.fillText("Rodrigo Niskier", nameX + nameWidth/2 - ctx.measureText("Rodrigo Niskier").width/2 , nameYPos); }
   ctx.restore();
 }
 
-function drawMapElements() { /* ... (adaptado para animação do vilão) ... */ 
+function drawMapElements() { 
   gameElementsOnMap.forEach(element => {
     if (element.type === "vilao") {
-        if (!element.alive && !element.isAscending) return; // Morto e não subindo = não desenha
-        if (element.isAscending && element.currentAlpha <= 0) return; // Terminou de subir/desvanecer
+        if (!element.alive && !element.isAscending) return; 
+        if (element.isAscending && element.currentAlpha <= 0) return; 
     } else if ((element.type === "word" || element.type === "power") && element.found) {
-        return; // Coletado
+        return; 
     }
 
     const screenX = worldToScreenX(element.x);
-    const elementVisualWidth = (element.type === "vilao" ? element.width : 120); 
+    const elementVisualWidth = element.width; // Usar a largura definida do elemento
     if (screenX < -elementVisualWidth || screenX > gameCanvas.width + elementVisualWidth) return;
 
     ctx.save();
-    if (element.isAscending) { // Aplica alpha para vilão subindo
+    if (element.isAscending) { 
         ctx.globalAlpha = Math.max(0, element.currentAlpha);
     }
 
@@ -361,24 +388,21 @@ function drawMapElements() { /* ... (adaptado para animação do vilão) ... */
       ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif"; ctx.textAlign = "center";
       ctx.shadowColor = element.type === "power" ? "#fff352" : "#facc15";
       ctx.shadowBlur = element.type === "power" ? 18 : 9;
-      // Não definir globalAlpha aqui se já foi setado para ascendente
       if (!element.isAscending) ctx.globalAlpha = element.type === "power" ? 0.95 : 0.85;
       ctx.fillStyle = element.type === "power" ? "#ffe34d" : "#fbbf24";
       ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + element.height/2);
     } else if (element.type === "vilao") {
-      const vilaoScreenY = element.y + element.height / 2; // y é topo do vilão
-      ctx.translate(screenX, vilaoScreenY);
-      
-      const vWidth = element.width; const vHeight = element.height;
-      const headRadius = vWidth * 0.4; const headYOffset = -vHeight * 0.35;
-      ctx.fillStyle = "#3a2e2e"; ctx.strokeStyle = "#1e1414"; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(-vWidth*0.45, -vHeight*0.2); ctx.lineTo(vWidth*0.45, -vHeight*0.2);  ctx.lineTo(vWidth*0.35, vHeight*0.5); ctx.lineTo(-vWidth*0.35, vHeight*0.5); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = "#6b4226"; ctx.fillRect(-vWidth*0.3, -vHeight*0.05, vWidth*0.6, vHeight*0.1);
-      ctx.beginPath(); ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI); ctx.closePath(); ctx.save(); ctx.clip();
-      const vilaoImage = loadedCharImages && loadedCharImages[2]; 
-      if (vilaoImage) { ctx.drawImage(vilaoImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2); } 
-      else { ctx.fillStyle = "#c5a687"; ctx.fill(); }
-      ctx.restore(); ctx.strokeStyle = "#504030"; ctx.lineWidth = 1; ctx.stroke();
+        const vilaoImage = loadedCharImages[2]; // personagem3.png
+        if (vilaoImage && vilaoImage.complete && vilaoImage.naturalWidth > 0) {
+            // Desenha a imagem do vilão. element.x e element.y são o canto superior esquerdo.
+            // screenX é o centro X do elemento no mundo, element.y é o topo do elemento no mundo.
+            const drawX = screenX - element.width / 2; // Ajusta para centralizar a imagem
+            const drawY = element.y;
+            ctx.drawImage(vilaoImage, drawX, drawY, element.width, element.height);
+        } else { // Fallback se imagem não carregar
+            ctx.fillStyle = "#502020"; // Cor escura para vilão
+            ctx.fillRect(screenX - element.width / 2, element.y, element.width, element.height);
+        }
     }
     ctx.restore();
   });
@@ -388,72 +412,45 @@ function drawProjectiles() { /* ... (código mantido) ... */
     if (!proj.active) return;
     const screenX = worldToScreenX(proj.x);
     if (screenX < -20 || screenX > gameCanvas.width + 20) { proj.active = false; return; }
-    ctx.save();
-    ctx.translate(screenX, proj.y); 
-    ctx.rotate(proj.dir * Date.now() * 0.0015); 
-    ctx.globalAlpha = 0.95; ctx.lineWidth = 5; 
-    ctx.strokeStyle = "#fff078"; ctx.shadowColor = "#ffe469"; ctx.shadowBlur = 10;
+    ctx.save(); ctx.translate(screenX, proj.y); ctx.rotate(proj.dir * Date.now() * 0.0015); 
+    ctx.globalAlpha = 0.95; ctx.lineWidth = 5; ctx.strokeStyle = "#fff078"; ctx.shadowColor = "#ffe469"; ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(0,-12); ctx.lineTo(0,12); ctx.stroke();
     ctx.lineWidth = 2.5; ctx.strokeStyle = "#ffffff"; ctx.shadowBlur = 0; 
     ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(7,0); ctx.moveTo(0,-11); ctx.lineTo(0,11); ctx.stroke();
     ctx.restore();
   });
 }
-function drawGameWorld() { /* ... (código mantido) ... */ 
-  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-  drawGameBackground(); drawGameGround(); drawMapElements(); drawProjectiles(); drawPlayerCharacter();
-}
+function drawGameWorld() { /* ... (código mantido) ... */  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height); drawGameBackground(); drawGameGround(); drawMapElements(); drawProjectiles(); drawPlayerCharacter(); }
 
 // ======== Coordenadas e Movimentação do Mundo (Mantido) ========
 function worldToScreenX(worldXCoord) { return worldXCoord - cameraX; }
 function getPlayerWorldX() { return player.worldX; }
 
 // ======== Lógica de Atualização do Jogo ========
-function updatePlayerState() { /* ... (lógica de movimento mantida) ... */
+function updatePlayerState() { /* ... (lógica de movimento e tremor mantida) ... */
   player.vx = 0; 
   let targetPlayerScreenX = gameCanvas.width / 2.5; 
+  if (keys["ArrowUp"] && player.onGround) { playSound('jump'); player.vy = player.jumpPower; player.onGround = false; }
   if (keys["ArrowLeft"])  { player.worldX -= player.speed; player.direction = -1; }
   if (keys["ArrowRight"]) { player.worldX += player.speed; player.direction = 1; }
   player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2));
-  cameraX = player.worldX - targetPlayerScreenX;
-  cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
+  cameraX = player.worldX - targetPlayerScreenX; cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
   player.x = player.worldX - cameraX; 
-  if (keys["ArrowUp"] && player.onGround) { player.vy = player.jumpPower; player.onGround = false; }
   player.vy += player.gravity; player.y += player.vy;
   if (player.y + player.height >= groundY) { player.y = groundY - player.height; player.vy = 0; player.onGround = true; }
   if (player.y < 0) { player.y = 0; player.vy = 0; }
-
-  // Lógica de tremor
-  if (player.isHit && player.hitShakeDuration > 0) {
-      player.hitShakeDuration--;
-  } else if (player.isHit && player.hitShakeDuration <= 0) {
-      player.isHit = false;
-  }
+  if (player.isHit && player.hitShakeDuration > 0) { player.hitShakeDuration--; } 
+  else if (player.isHit && player.hitShakeDuration <= 0) { player.isHit = false; }
 }
-
-function updateViloesAnimation() { // Nova função para animação de subida
-    gameElementsOnMap.forEach(element => {
-        if (element.type === "vilao" && element.isAscending && element.alive) { // `alive` ainda é true durante a subida
-            element.y += element.ascendSpeedY;
-            element.currentAlpha -= 0.025; // Fade out
-            if (element.currentAlpha <= 0 || element.y < -element.height * 2) { // Se sumiu ou muito alto
-                element.isAscending = false; // Para animação
-                element.alive = false;       // Agora realmente "morto" para não ser processado/desenhado
-            }
-        }
-    });
-}
-
+function updateViloesAnimation() { /* ... (mantido) ... */ gameElementsOnMap.forEach(element => { if (element.type === "vilao" && element.isAscending && element.alive) { element.y += element.ascendSpeedY; element.currentAlpha -= 0.025; if (element.currentAlpha <= 0 || element.y < -element.height * 2) { element.isAscending = false; element.alive = false; } } });}
 
 function checkCollisions() {
   if (challengeActive) return;
   gameElementsOnMap.forEach(el => el.collidedThisFrame = false);
-
   const playerRect = { x: getPlayerWorldX() - player.width / 2, y: player.y, width: player.width, height: player.height };
 
   gameElementsOnMap.forEach((element, mapIndex) => {
     if (element.collidedThisFrame) return;
-    // Só checa colisão com vilões vivos que não estão subindo
     if (element.type === "vilao" && (!element.alive || element.isAscending)) return;
     if ((element.type === "word" || element.type === "power") && element.found) return;
 
@@ -462,13 +459,14 @@ function checkCollisions() {
         playerRect.y < elRect.y + elRect.height && playerRect.y + playerRect.height > elRect.y) {
       element.collidedThisFrame = true;
       if (element.type === "power") {
-        points += 100; playerGlowEffect = 180; updatePointsDisplay(); element.found = true; // Brilho por 3 segundos (180 frames)
+        playSound('collectPower'); points += 100; playerGlowEffect = 180; updatePointsDisplay(); element.found = true; 
       } else if (element.type === "word") {
+        // Som de coletar palavra será tocado no completeChallenge
         currentChallengeWordMapIndex = mapIndex; triggerChallengeModal(element.wordDataIndex);
-      } else if (element.type === "vilao") { // Colisão com Fariseu
+      } else if (element.type === "vilao") { 
         if (element.cooldown <= 0) {
-          points -= 75; updatePointsDisplay(); element.cooldown = 90; playerGlowEffect = 0;
-          player.isHit = true; player.hitShakeDuration = 15; // Ativa tremor (15 frames = 0.25s)
+          playSound('playerHit'); points -= 75; updatePointsDisplay(); element.cooldown = 90; playerGlowEffect = 0;
+          player.isHit = true; player.hitShakeDuration = 15; 
           if (points < 0 && vidas > 0) { loseLife(); if (vidas > 0) points = 50; }
           else if (vidas === 0 && points < 0) { loseLife(); }
         }
@@ -480,15 +478,13 @@ function checkCollisions() {
   projectiles.forEach(proj => {
     if (!proj.active) return;
     const projRect = { x: proj.x - 7, y: proj.y - 11, width: 14, height: 22 };
-    gameElementsOnMap.forEach(element => {
-      if (element.type === "vilao" && element.alive && !element.isAscending && !element.collidedThisFrameProjectile) { // Só atinge vilões vivos e não subindo
+    gameElementsOnMap.forEach(element => { 
+      if (element.type === "vilao" && element.alive && !element.isAscending && !element.collidedThisFrameProjectile) { 
         const vilaoRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height };
         if (projRect.x < vilaoRect.x + vilaoRect.width && projRect.x + projRect.width > vilaoRect.x &&
             projRect.y < vilaoRect.y + vilaoRect.height && projRect.y + projRect.height > vilaoRect.y) {
-          element.collidedThisFrameProjectile = true; 
-          element.isAscending = true; // Inicia animação de subida
-          // element.alive permanece true durante a animação de subida, será false ao final dela
-          proj.active = false; 
+          playSound('vilaoDefeated'); element.collidedThisFrameProjectile = true; 
+          element.isAscending = true; proj.active = false; 
           viloesDefeated++; points += 50; updatePointsDisplay(); checkWinCondition();
         }
       }
@@ -497,29 +493,44 @@ function checkCollisions() {
   });
 }
 
-function updatePointsDisplay() { /* ... (mantido) ... */ scoreValueEl.textContent = Math.max(0, points); }
-function loseLife() { /* ... (mantido) ... */ vidas--; updateLivesDisplay(); if (vidas > 0) { player.worldX = Math.max(player.width / 2, player.worldX - 300); player.y = groundY - player.height - 200; player.vy = 0; } else { isGameOver = true; gameOutcomeType = "over"; showEndGameModal(); } }
-function updateLivesDisplay() { /* ... (mantido) ... */ livesEl.innerHTML = Array(vidas).fill('<span class="lives-heart">♥</span>').join('');}
-function fireProjectile() { /* ... (mantido) ... */ const cost = 15; if (points < cost && projectiles.length > 2) return; if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return; projectiles.push({ x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)), y: player.y + player.height * 0.4, vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now() }); if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay(); }
-function updateProjectiles() { /* ... (mantido) ... */ projectiles = projectiles.filter(p => p.active); projectiles.forEach(p => { p.x += p.vx; if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false; });}
+function updatePointsDisplay() { scoreValueEl.textContent = Math.max(0, points); }
+function loseLife() { vidas--; updateLivesDisplay(); if (vidas > 0) { player.worldX = Math.max(player.width / 2, player.worldX - 300); player.y = groundY - player.height - 200; player.vy = 0; } else { isGameOver = true; gameOutcomeType = "over"; showEndGameModal(); } }
+function updateLivesDisplay() { livesEl.innerHTML = Array(vidas).fill('<span class="lives-heart">♥</span>').join('');}
+function fireProjectile() { 
+    const cost = 15; if (points < cost && projectiles.length > 2) return; 
+    if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return;
+    playSound('shoot');
+    projectiles.push({ x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)), y: player.y + player.height * 0.4, vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now() }); 
+    if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay(); 
+}
+function updateProjectiles() { projectiles = projectiles.filter(p => p.active); projectiles.forEach(p => { p.x += p.vx; if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false; });}
 
 // ======== Lógica do Desafio de Palavras (Mantida) ========
-function triggerChallengeModal(wordDataIdx) { /* ... (mantido) ... */ challengeActive = true; usedHint = false; const wordEntry = WORDS_DATA[wordDataIdx]; hebrewWordEl.textContent = wordEntry.he; answerInputEl.value = ""; feedbackEl.textContent = ""; hintEl.textContent = ""; answerInputEl.focus(); hintBtn.disabled = false; challengeStartTime = performance.now(); timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`; clearInterval(challengeTimerInterval); challengeTimerInterval = setInterval(() => { const sLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - (performance.now() - challengeStartTime) / 1000); timerEl.textContent = `Tempo: ${sLeft.toFixed(1)}s`; if (sLeft <= 0) { clearInterval(challengeTimerInterval); failChallenge(wordDataIdx); } }, 90); challengeModal.classList.remove('hidden'); }
-hintBtn.addEventListener('click', () => { if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) { const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica."; usedHint = true; hintBtn.disabled = true; }});
-answerForm.addEventListener('submit', (e) => { e.preventDefault(); if (!challengeActive || currentChallengeWordMapIndex === -1) return; const userAnswer = normalize(answerInputEl.value); const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; const wordEntry = WORDS_DATA[mapElement.wordDataIndex]; const isCorrect = wordEntry.pt.some(t => normalize(t) === userAnswer); if (isCorrect) completeChallenge(mapElement.wordDataIndex); else { feedbackEl.textContent = "Tradução incorreta. Tente novamente!"; answerInputEl.select(); }});
-function completeChallenge(wordDataIdx) { /* ... (mantido) ... */ clearInterval(challengeTimerInterval); const timeTaken = (performance.now() - challengeStartTime) / 1000; const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken)); points += ptsEarned; wordsFoundCorrectly++; if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true; updatePointsDisplay(); feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`; setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800); }
-function failChallenge(wordDataIdx) { /* ... (mantido) ... */ clearInterval(challengeTimerInterval); feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`; setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; }, 1500); }
-function checkWinCondition() { /* ... (mantido) ... */ if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) { isGameOver = true; gameOutcomeType = "win"; showEndGameModal(); } }
-function showEndGameModal() { /* ... (mantido) ... */ endModal.classList.remove('hidden'); if (gameOutcomeType === "win") { endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`; } else { endTitleEl.textContent = "Game Over"; endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`; } }
+function triggerChallengeModal(wordDataIdx) { challengeActive = true; usedHint = false; const wordEntry = WORDS_DATA[wordDataIdx]; hebrewWordEl.textContent = wordEntry.he; answerInputEl.value = ""; feedbackEl.textContent = ""; hintEl.textContent = ""; answerInputEl.focus(); hintBtn.disabled = false; challengeStartTime = performance.now(); timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`; clearInterval(challengeTimerInterval); challengeTimerInterval = setInterval(() => { const sLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - (performance.now() - challengeStartTime) / 1000); timerEl.textContent = `Tempo: ${sLeft.toFixed(1)}s`; if (sLeft <= 0) { clearInterval(challengeTimerInterval); failChallenge(wordDataIdx); } }, 90); challengeModal.classList.remove('hidden'); }
+hintBtn.addEventListener('click', () => { playSound('uiClick', 0.5); if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) { const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica."; usedHint = true; hintBtn.disabled = true; }});
+answerForm.addEventListener('submit', (e) => { e.preventDefault(); playSound('uiClick', 0.5); if (!challengeActive || currentChallengeWordMapIndex === -1) return; const userAnswer = normalize(answerInputEl.value); const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; const wordEntry = WORDS_DATA[mapElement.wordDataIndex]; const isCorrect = wordEntry.pt.some(t => normalize(t) === userAnswer); if (isCorrect) completeChallenge(mapElement.wordDataIndex); else { feedbackEl.textContent = "Tradução incorreta. Tente novamente!"; answerInputEl.select(); }});
+function completeChallenge(wordDataIdx) { 
+    playSound('collectWord'); clearInterval(challengeTimerInterval); 
+    const timeTaken = (performance.now() - challengeStartTime) / 1000; 
+    const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken)); 
+    points += ptsEarned; wordsFoundCorrectly++; 
+    if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true; 
+    updatePointsDisplay(); 
+    feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`; 
+    setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800); 
+}
+function failChallenge(wordDataIdx) { clearInterval(challengeTimerInterval); feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`; setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; }, 1500); }
+function checkWinCondition() { if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) { isGameOver = true; gameOutcomeType = "win"; showEndGameModal(); } }
+function showEndGameModal() { endModal.classList.remove('hidden'); if (gameOutcomeType === "win") { endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`; } else { endTitleEl.textContent = "Game Over"; endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`; } }
 
 // ======== Loop Principal do Jogo ========
 function gameLoop() {
-  if (isGameOver) return;
+  if (isGameOver) {
+      if (gameSounds.background && !gameSounds.background.paused) gameSounds.background.pause(); // Para música de fundo
+      return;
+  }
   if (!challengeActive) {
-    updatePlayerState(); 
-    updateProjectiles(); 
-    updateViloesAnimation(); // Atualiza animação de subida dos vilões
-    checkCollisions();
+    updatePlayerState(); updateProjectiles(); updateViloesAnimation(); checkCollisions();
     if (playerGlowEffect > 0) playerGlowEffect--;
   }
   drawGameWorld();
@@ -529,14 +540,15 @@ function gameLoop() {
 // ======== Controles (Mantido) ========
 document.addEventListener('keydown', (e) => { const activeEl = document.activeElement; const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA'); if (!isInputFocused && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space")) { if(!challengeActive) e.preventDefault(); } if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = true; if (e.code === "Space" && !challengeActive) fireProjectile(); if (challengeActive && e.code === "Escape") { challengeModal.classList.add('hidden'); challengeActive = false; clearInterval(challengeTimerInterval); } });
 document.addEventListener('keyup', (e) => { if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = false; });
-// Controles Touch (mantido)
 if (isMobileDevice()) { const touchBtnLeft = document.getElementById('btnLeft'); const touchBtnRight = document.getElementById('btnRight'); const touchBtnUp = document.getElementById('btnUp'); const touchBtnFire = document.getElementById('btnFire'); let touchMappings = [ {btn: touchBtnLeft, code: 'ArrowLeft'}, {btn: touchBtnRight, code: 'ArrowRight'}, {btn: touchBtnUp, code: 'ArrowUp'} ]; touchMappings.forEach(({ btn, code }) => { btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; }, { passive: false }); btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; }, { passive: false }); btn.addEventListener('touchcancel', (e) => { keys[code] = false; }, { passive: false }); }); touchBtnFire.addEventListener('touchstart', (e) => { e.preventDefault(); if (!challengeActive) fireProjectile(); }, { passive: false });}
-
 
 // ======== Ajuste do Canvas e Inicialização (Mantido) ========
 function adjustGameCanvas() { let newWidth = Math.min(window.innerWidth - 15, 900); let bottomMargin = isMobileDevice() ? (touchControls.offsetHeight > 0 ? touchControls.offsetHeight + 10 : 80) : 20; let topMargin = scoreHud.offsetHeight > 0 ? scoreHud.offsetHeight + 10 : 60; newHeight = Math.max(300, Math.min(window.innerHeight - topMargin - bottomMargin, 550)); gameCanvas.width = newWidth; gameCanvas.height = newHeight; if (player) { player.x = gameCanvas.width / 2.5; groundY = gameCanvas.height * 0.82; if(player.y + player.height > groundY) player.y = groundY - player.height; drawGameWorld(); } }
 window.addEventListener('resize', adjustGameCanvas);
 adjustGameCanvas(); 
+// loadSounds(); // Carrega os sons assim que o script é lido, antes mesmo do jogo começar
+// Ou chama dentro de initializeGame() ou após primeira interação do usuário.
+// Para melhor compatibilidade, chamarei após a primeira interação real (okBtn).
 </script>
 </body>
 </html>
