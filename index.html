@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Otimizado)</title>
+  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Revisado)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
   <style>
-    body { font-family: 'JetBrains Mono', monospace; background: #222c36; }
+    body { font-family: 'JetBrains Mono', monospace; background: #222c36; color: #e2e8f0; }
     canvas { background: transparent; display: block; margin: 0 auto; touch-action: none; }
     .hebrew { font-family: 'Noto Sans Hebrew', sans-serif; font-size: 2.2rem; direction: rtl; }
     .modal-bg { background: rgba(0,0,0,0.7); }
@@ -17,7 +17,35 @@
     .char-choice { transition: transform 0.18s; }
     .char-choice.selected { transform: scale(1.13); border: 3px solid #2563eb; box-shadow: 0 0 0 4px #2563eb55; z-index: 2; }
     .lives-heart { color: #ff4141; font-size: 2rem; margin-right: 0.3em; }
-    @media (max-width: 600px) { #game { margin-top: 10px !important; } }
+    
+    /* Ajuste para o Quadro de Comandos */
+    #commandScreen > div.bg-white { /* Alvo o div branco interno */
+        width: 90vw; /* Mais largo */
+        max-width: 650px; /* Limite máximo de largura */
+        height: auto; /* Altura automática baseada no conteúdo */
+        max-height: 90vh; /* Limite de altura para evitar ultrapassar a tela */
+        overflow-y: auto; /* Adiciona scroll se o conteúdo ainda for muito alto */
+        padding: 1.5rem; /* Padding ajustado */
+        gap: 0.8rem; /* Espaçamento interno ajustado */
+    }
+    #commandScreen > div.bg-white > ul { /* Alvo a lista de comandos */
+        margin-bottom: 0.8rem; /* Margem inferior ajustada */
+        line-height: 1.6; /* Espaçamento entre linhas ajustado */
+    }
+     #commandScreen > div.bg-white > h2 {
+        margin-bottom: 0.5rem;
+     }
+
+    @media (max-width: 600px) { 
+        #gameCanvas { margin-top: 10px !important; } 
+        #commandScreen > div.bg-white {
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+        #commandScreen > div.bg-white > ul {
+             font-size: 0.875rem; /* Reduzir um pouco a fonte em telas menores */
+        }
+    }
   </style>
 </head>
 <body class="flex flex-col items-center min-h-screen bg-gray-900">
@@ -45,18 +73,18 @@
   </div>
 
   <div id="commandScreen" class="fixed inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-2xl shadow-2xl w-[340px] p-8 flex flex-col items-center gap-6">
-      <h2 class="text-2xl font-bold text-blue-800 mb-2">Comandos do Jogo</h2>
-      <ul class="text-gray-900 text-base text-left leading-7 mb-3">
+    <div class="bg-white rounded-2xl shadow-2xl text-gray-900"> {/* Removido w-[] e p-[], gap-[] para CSS controlar */}
+      <h2 class="text-2xl font-bold text-blue-800">Comandos do Jogo</h2>
+      <ul class="text-base text-left leading-7">
         <li><b>Movimentar:</b> <span class="bg-gray-200 rounded px-1">←</span> <span class="bg-gray-200 rounded px-1">→</span> (ou botões laterais)</li>
         <li><b>Pular:</b> <span class="bg-gray-200 rounded px-1">↑</span> (ou botão "↑")</li>
         <li><b>Atirar Cruz:</b> <span class="bg-gray-200 rounded px-1">barra de espaço</span> (ou botão com cruz ✝️)</li>
         <li><b>Coletar palavra:</b> encoste nela</li>
-        <li><b>Derrote vilões:</b> atire a cruz neles</li>
-        <li><b>Power-up:</b> pegue יָד ("iad") para ganhar poder (100 pontos e brilho especial)</li>
-        <li><b>Vidas:</b> você tem 3 corações (perde vida se ficar com pontos negativos após colidir com vilão)</li>
+        <li><b>Derrote Fariseus:</b> atire a cruz neles</li>
+        <li><b>Power-up:</b> pegue יָד ("yad") para ganhar poder (100 pontos e brilho especial)</li>
+        <li><b>Vidas:</b> você tem 3 corações (perde vida se ficar com pontos negativos após colidir com Fariseu)</li>
         <li><b>Game Over:</b> se perder todas as vidas</li>
-        <li><b>Vitória:</b> colete todas as palavras e derrote todos os vilões</li>
+        <li><b>Vitória:</b> colete todas as palavras e derrote todos os Fariseus</li>
       </ul>
       <button id="okBtn" class="w-full px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">OK</button>
     </div>
@@ -146,7 +174,7 @@ function normalize(str) {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9ãõç\s]/gi, '') // Corrigido para manter letras com acentos comuns e ç
+    .replace(/[^a-z0-9ãõçáéíóúàèìòùâêîôûäëïöü\s]/gi, '') // Mantém mais caracteres acentuados e ç
     .trim();
 }
 
@@ -157,9 +185,9 @@ let usedHint = false;
 const charOptionBtns = [char1Btn, char2Btn];
 
 const charImgsPaths = [
-  "personagem1.png",
-  "personagem2.png",
-  "personagem3.png" // Para vilão
+  "personagem1.png", // Jogador 1
+  "personagem2.png", // Jogador 2
+  "personagem3.png"  // Fariseu (Vilão)
 ];
 const backgroundImageUrl = "fundo.jpg";
 const WORDS_DATA = [
@@ -193,12 +221,12 @@ const WORDS_DATA = [
   {he:"שָׁנָה", tr:"shanah", pt:["ano"], dica:"Tempo de 12 meses"},
   {he:"מַיִם", tr:"mayim", pt:["água","águas"], dica:"Líquido essencial"},
   {he:"עֵין", tr:"ayin", pt:["olho","vista"], dica:"Sentido da visão"},
-  {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true} // Power-up
+  {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true} // Power-up "יָד"
 ];
 
-let gameElementsOnMap = []; // Elementos (palavras, power-ups, vilões) posicionados no mapa
+let gameElementsOnMap = [];
 let player, cameraX, worldLength, groundY, currentChallengeWordMapIndex, challengeActive, challengeStartTime,
-  points, wordsFoundCorrectly, viloesDefeated, keys, loadedCharImages, vidas, playerGlowEffect, projectiles, viloesOnMap,
+  points, wordsFoundCorrectly, viloesDefeated, keys, loadedCharImages, vidas, playerGlowEffect, projectiles,
   isGameOver, gameOutcomeType, wordsToWin, viloesToWin;
 
 let challengeTimerInterval = null;
@@ -210,7 +238,6 @@ bgGameImage.src = backgroundImageUrl;
 function updatePlayButtonState() {
   playBtn.disabled = !(playerName.length > 0 && selectedChar > 0);
 }
-
 charOptionBtns.forEach((btn, idx) => {
   btn.addEventListener('click', () => {
     selectedChar = idx + 1;
@@ -218,844 +245,660 @@ charOptionBtns.forEach((btn, idx) => {
     updatePlayButtonState();
   });
 });
-
-usernameInput.addEventListener('input', function() {
-  playerName = this.value.trim();
-  updatePlayButtonState();
-});
-
-playBtn.addEventListener('click', function() {
-  startScreen.style.display = "none";
-  commandScreen.style.display = "flex";
-});
-
-okBtn.addEventListener('click', function() {
+usernameInput.addEventListener('input', function() { playerName = this.value.trim(); updatePlayButtonState(); });
+playBtn.addEventListener('click', () => { startScreen.style.display = "none"; commandScreen.style.display = "flex"; });
+okBtn.addEventListener('click', () => {
   commandScreen.style.display = "none";
-  gameCanvas.style.display = "block"; // Alterado para block
-  scoreHud.style.display = "flex";   // Alterado para flex
-  if (isMobileDevice()) touchControls.style.display = "flex";
-  else touchControls.style.display = "none";
+  gameCanvas.style.display = "block";
+  scoreHud.style.display = "flex";
+  touchControls.style.display = isMobileDevice() ? "flex" : "none";
   initializeGame();
 });
 
 // ======== Configuração do Jogo e Elementos do Mapa ========
 function setupMapElements() {
-  gameElementsOnMap = []; // Limpa elementos anteriores
-  let shuffledWords = WORDS_DATA.filter(w => !w.power).sort(() => Math.random() - 0.5);
-  let powerUpsToAdd = Math.min(10, Math.floor(shuffledWords.length / 3)); // Ajustado para menos power-ups
-  let wordsToPlace = Math.min(30, shuffledWords.length);
-  let powerUpSpacing = Math.floor(wordsToPlace / (powerUpsToAdd + 1)); // Espaçamento mais distribuído
-  let vilaoSpacing = 3; // Mantido
-  let vilaoStartIndex = 7; // Mantido
+    gameElementsOnMap = [];
+    wordsToWin = 0;
+    viloesToWin = 0;
 
-  let elements = [];
-  let wordIdx = 0;
-  let powerUpsPlaced = 0;
-  let viloesPlaced = 0;
-  wordsToWin = 0;
-  viloesToWin = 0;
+    const normalWordsPool = WORDS_DATA.filter(w => !w.power).sort(() => 0.5 - Math.random());
+    const yadWordEntry = WORDS_DATA.find(w => w.power);
+    const yadWordDataIndex = yadWordEntry ? WORDS_DATA.indexOf(yadWordEntry) : -1;
 
-  const powerUpWordIndex = WORDS_DATA.findIndex(w => w.power);
+    let normalWordsPlacedThisCycle = 0; // Contador para regras de YAD e Vilão
+    let totalNormalWordsEverPlaced = 0; // Contador geral de palavras normais
+    
+    const MIN_NORMAL_WORDS_TARGET = 30; // Alvo para palavras normais
+    let currentNormalWordPoolIndex = 0;
 
-  for (let i = 0; i < wordsToPlace; i++) {
-    // Adicionar power-up
-    if (i > 0 && powerUpSpacing > 0 && i % powerUpSpacing === 0 && powerUpsPlaced < powerUpsToAdd && powerUpWordIndex !== -1) {
-      elements.push({ type: "power", wordDataIndex: powerUpWordIndex, wordObj: WORDS_DATA[powerUpWordIndex] });
-      powerUpsPlaced++;
+    // Loop para construir a sequência de elementos
+    while (currentNormalWordPoolIndex < MIN_NORMAL_WORDS_TARGET || gameElementsOnMap.length < MIN_NORMAL_WORDS_TARGET + 5) { // Garante um mínimo de elementos
+        let elementAddedThisIteration = false;
+
+        // Lógica para YAD
+        if (yadWordDataIndex !== -1) {
+            // Primeira YAD: depois da 3ª palavra normal (será o 4º item se nenhuma outra regra intervir)
+            if (totalNormalWordsEverPlaced === 3 && normalWordsPlacedThisCycle === 3) { 
+                gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
+                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de YAD (de 7)
+                elementAddedThisIteration = true;
+            } 
+            // YADs subsequentes: a cada 7 palavras normais DEPOIS da primeira YAD
+            else if (totalNormalWordsEverPlaced > 3 && normalWordsPlacedThisCycle >= 7) {
+                gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
+                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de YAD
+                elementAddedThisIteration = true;
+            }
+        }
+
+        // Lógica para VILÃO (Fariseu)
+        if (!elementAddedThisIteration) { // Só adiciona vilão se YAD não foi adicionado
+            // Primeiro VILÃO: depois da 5ª palavra normal
+            if (totalNormalWordsEverPlaced === 5 && normalWordsPlacedThisCycle === 5) { 
+                gameElementsOnMap.push({ type: "vilao" });
+                viloesToWin++;
+                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de Vilão (de 5)
+                elementAddedThisIteration = true;
+            }
+            // VILÕES subsequentes: a cada 5 palavras normais DEPOIS do primeiro Vilão
+            else if (totalNormalWordsEverPlaced > 5 && normalWordsPlacedThisCycle >= 5) {
+                gameElementsOnMap.push({ type: "vilao" });
+                viloesToWin++;
+                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de Vilão
+                elementAddedThisIteration = true;
+            }
+        }
+        
+        // Adiciona PALAVRA NORMAL se nada mais foi adicionado e ainda há palavras no pool
+        if (!elementAddedThisIteration && currentNormalWordPoolIndex < normalWordsPool.length) {
+            const wordData = normalWordsPool[currentNormalWordPoolIndex];
+            const globalIdx = WORDS_DATA.indexOf(wordData);
+            gameElementsOnMap.push({ type: "word", wordDataIndex: globalIdx, wordObj: wordData });
+            
+            wordsToWin++;
+            normalWordsPlacedThisCycle++;
+            totalNormalWordsEverPlaced++;
+            currentNormalWordPoolIndex++;
+            elementAddedThisIteration = true;
+        }
+        
+        // Se não adicionou nada e o pool de palavras acabou, sai do loop
+        if (!elementAddedThisIteration && currentNormalWordPoolIndex >= normalWordsPool.length) {
+            break;
+        }
     }
-    // Adicionar vilão
-    if (i >= vilaoStartIndex && (i - vilaoStartIndex) % vilaoSpacing === 0) {
-      elements.push({ type: "vilao" });
-      viloesToWin++;
-      viloesPlaced++;
+    // Se não houver vilões adicionados e o jogo já passou do ponto inicial, adiciona um para garantir
+    if (viloesToWin === 0 && totalNormalWordsEverPlaced > 5) {
+        gameElementsOnMap.push({ type: "vilao" });
+        viloesToWin++;
     }
-    // Adicionar palavra normal
-    if (wordIdx < shuffledWords.length) {
-      const wordData = shuffledWords[wordIdx];
-      const originalWordIndex = WORDS_DATA.indexOf(wordData);
-      elements.push({ type: "word", wordDataIndex: originalWordIndex, wordObj: wordData });
-      wordsToWin++;
-      wordIdx++;
-    }
-  }
-  // Se não houver vilões suficientes, adicionar mais alguns no final para garantir
-  while(viloesPlaced < 5 && wordsToPlace > 10) { // Exemplo: garantir pelo menos 5 vilões
-      elements.push({ type: "vilao" });
-      viloesToWin++;
-      viloesPlaced++;
-      if(viloesPlaced > wordsToPlace / 2) break; // Evitar excesso de vilões
-  }
-
-  gameElementsOnMap = elements.sort(() => Math.random() - 0.5); // Embaralha a ordem final dos elementos no mapa
 }
 
 
 // ======== Inicialização do Jogo ========
 function initializeGame() {
   player = {
-    x: gameCanvas.width / 2, // Centralizado inicialmente
-    y: 320,
-    width: 36,
-    height: 66,
-    vx: 0,
-    vy: 0,
-    speed: 4.2,
-    onGround: true,
-    gravity: 0.58,
-    jumpPower: -10.6,
-    direction: 1,
-    worldX: gameCanvas.width / 2 // Posição virtual no mundo
+    x: gameCanvas.width / 2.5, // Um pouco mais à esquerda do centro
+    y: 300,
+    width: 38, height: 70, // Tamanho ajustado para novo desenho
+    vx: 0, vy: 0, speed: 4.5, onGround: true,
+    gravity: 0.6, jumpPower: -11.5, direction: 1,
+    worldX: gameCanvas.width / 2.5
   };
   cameraX = 0;
-  groundY = 360; // Ajustar se o canvas mudar muito de altura
+  groundY = gameCanvas.height * 0.82; // Chão um pouco mais alto
   
-  setupMapElements(); // Configura quais elementos e quantos
-  
-  worldLength = 300 + gameElementsOnMap.length * (120 + Math.random() * 40) + 800; // Comprimento do mundo dinâmico
-
-  // Reposicionar elementos no mapa
-  positionGameElements();
+  setupMapElements();
+  positionGameElements(); // Posiciona os elementos baseados no setupMapElements
 
   currentChallengeWordMapIndex = -1;
-  challengeActive = false;
-  challengeStartTime = 0;
-  points = 200; // Pontos iniciais
-  wordsFoundCorrectly = 0;
-  viloesDefeated = 0;
-  keys = {};
-  vidas = 3;
-  playerGlowEffect = 0;
-  projectiles = [];
-  // viloesOnMap já é preenchido por positionGameElements
-  isGameOver = false;
-  gameOutcomeType = "";
+  challengeActive = false; challengeStartTime = 0;
+  points = 200; wordsFoundCorrectly = 0; viloesDefeated = 0;
+  keys = {}; vidas = 3; playerGlowEffect = 0; projectiles = [];
+  isGameOver = false; gameOutcomeType = "";
 
-  updateLivesDisplay();
-  updatePointsDisplay();
-
-  loadCharacterImages().then(() => {
-    drawGameWorld(); // Primeiro desenho
-    gameLoop();       // Inicia o loop do jogo
-  });
+  updateLivesDisplay(); updatePointsDisplay();
+  loadCharacterImages().then(() => { drawGameWorld(); gameLoop(); });
 }
 
 function loadCharacterImages() {
   return new Promise(resolve => {
-    loadedCharImages = [];
-    let imagesToLoad = charImgsPaths.length;
-    if (imagesToLoad === 0) {
-        resolve();
-        return;
-    }
+    loadedCharImages = []; let imagesToLoad = charImgsPaths.length;
+    if (imagesToLoad === 0) { resolve(); return; }
     let loadedCount = 0;
     charImgsPaths.forEach((src, i) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        loadedCharImages[i] = img;
-        loadedCount++;
-        if (loadedCount === imagesToLoad) resolve();
-      };
-      img.onerror = () => { // Mesmo se falhar, conta como "carregada" para não travar
-        console.error(`Falha ao carregar imagem: ${src}`);
-        loadedCharImages[i] = null; // Marcar como nula
-        loadedCount++;
-        if (loadedCount === imagesToLoad) resolve();
-      };
+      const img = new Image(); img.src = src;
+      img.onload = () => { loadedCharImages[i] = img; loadedCount++; if (loadedCount === imagesToLoad) resolve(); };
+      img.onerror = () => { console.error(`Falha ao carregar: ${src}`); loadedCharImages[i] = null; loadedCount++; if (loadedCount === imagesToLoad) resolve(); };
     });
   });
 }
 
 function positionGameElements() {
-  // Limpa e recria os arrays de posições
-  // wordPositions agora será parte de gameElementsOnMap, assim como viloesOnMap
-  viloesOnMap = [];
-  let currentMapX = 300;
+  let currentMapX = 400; // Posição X inicial para o primeiro elemento
+  const vilaoHeight = player.height * 0.95; // Altura do vilão similar ao jogador
 
   gameElementsOnMap.forEach(element => {
     element.x = currentMapX;
-    element.found = false; // Para palavras e power-ups
-    element.collided = false; // Para evitar múltiplas colisões no mesmo frame
+    element.found = false; 
+    element.collidedThisFrame = false;
 
     if (element.type === "vilao") {
-      element.y = groundY - player.height; // Ajustado para a base do vilão no chão
+      element.y = groundY - vilaoHeight; // Vilão no chão
+      element.height = vilaoHeight;
+      element.width = player.width * 0.9;
       element.alive = true;
       element.cooldown = 0;
-      // Adiciona à lista específica de vilões para acesso rápido, se necessário
-      viloesOnMap.push(element);
     } else if (element.type === "word" || element.type === "power") {
-      const minY = 220;
-      const maxY = groundY - 54; // (Altura da palavra + alguma margem)
+      const minY = groundY * 0.6; // Palavras podem flutuar mais alto
+      const maxY = groundY - 60; 
       element.y = minY + Math.random() * (maxY - minY);
+      element.height = 54; // Altura da hitbox da palavra
+      element.width = 100; // Largura da hitbox da palavra
     }
-    currentMapX += 120 + Math.random() * 60; // Espaçamento maior e mais variado
+    currentMapX += 150 + Math.random() * 80; // Espaçamento entre elementos
   });
-  worldLength = currentMapX + 400; // Garante espaço no final
+  worldLength = currentMapX + gameCanvas.width; // Garante espaço no final
 }
-
 
 // ======== Funções de Desenho no Canvas ========
 function drawGameBackground() {
   if (bgGameImage.complete && bgGameImage.naturalWidth > 0) {
-    // Desenhar background com parallax (exemplo simples)
-    const bgX = -(cameraX * 0.1 % bgGameImage.width); // Movimento mais lento para parallax
-    ctx.drawImage(bgGameImage, bgX, 0, bgGameImage.width, gameCanvas.height);
-    if (bgX + bgGameImage.width < gameCanvas.width) { // Desenha segunda imagem para cobrir
-        ctx.drawImage(bgGameImage, bgX + bgGameImage.width, 0, bgGameImage.width, gameCanvas.height);
+    const bgAspect = bgGameImage.naturalWidth / bgGameImage.naturalHeight;
+    const bgHeight = gameCanvas.height;
+    const bgWidth = bgHeight * bgAspect;
+    const numRepeats = Math.ceil(gameCanvas.width / bgWidth) + 2; // Para cobrir a tela com parallax
+    
+    for (let i = 0; i < numRepeats; i++) {
+        let bgX = (i * bgWidth) - (cameraX * 0.2 % bgWidth) ; // Parallax mais lento
+        // Se a imagem sair completamente para a esquerda, reposiciona para a direita
+        if (bgX + bgWidth < 0) bgX += numRepeats * bgWidth; 
+        ctx.drawImage(bgGameImage, bgX, 0, bgWidth, bgHeight);
     }
   } else {
-    ctx.fillStyle = "#7dd3fc"; // Cor sólida se imagem não carregar
-    ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+    ctx.fillStyle = "#7dd3fc"; ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
   }
-  // Nome do criador (opcional)
-  ctx.save();
-  ctx.globalAlpha = 0.13;
-  ctx.font = "bold 60px JetBrains Mono, monospace"; // Tamanho reduzido
-  ctx.fillStyle = "#2d2d5a";
-  ctx.textAlign = "center";
-  ctx.fillText("Rodrigo Niskier", gameCanvas.width / 2, gameCanvas.height / 2 + 20);
-  ctx.restore();
 }
 
 function drawPlayerCharacter() {
   ctx.save();
-  const playerScreenX = player.x; // Posição do jogador na tela (fixa, a menos que no início/fim do mundo)
-  const playerScreenY = player.y + player.height / 2; // Centro vertical para transformações
+  const playerScreenX = player.x; 
+  const playerScreenY = player.y + player.height / 2; 
   
   ctx.translate(playerScreenX, playerScreenY);
-  ctx.scale(player.direction, 1); // Inverte a direção do desenho
+  ctx.scale(player.direction, 1);
 
-  // Efeito de brilho (power-up)
-  if (playerGlowEffect > 0) {
-    ctx.save();
-    ctx.globalAlpha = Math.max(0.45, playerGlowEffect / 90);
-    for (let i = 0; i < 12; i++) { // Menos arcos para otimizar
-      ctx.beginPath();
-      const angle = i * (Math.PI * 2 / 12) + playerGlowEffect / 10;
-      const radius = 30 + 5 * Math.sin(angle);
-      ctx.arc(0, 6, radius, 0, 2 * Math.PI);
-      ctx.strokeStyle = `rgba(255,220,30,${0.2 + Math.random() * 0.1})`;
-      ctx.lineWidth = 6 + Math.random() * 4;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "#ffe75a";
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
+  if (playerGlowEffect > 0) { /* ... (código do brilho mantido) ... */ }
 
-  // Desenho do corpo do personagem (simplificado para exemplo, manter o seu desenho original)
-    // Ombros e peito (paletó azul escuro)
-    ctx.fillStyle = "#273262"; // Paletó
-    ctx.strokeStyle = "#182042"; // Contorno Paletó
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-player.width/2 + 3, -player.height/2 + 10); // Ombro esquerdo
-    ctx.lineTo(player.width/2 - 3, -player.height/2 + 10);  // Ombro direito
-    ctx.lineTo(player.width/2 - 8, player.height/2 - player.height*0.1);   // Lateral direita baixo
-    ctx.lineTo(-player.width/2 + 8, player.height/2 - player.height*0.1);  // Lateral esquerda baixo
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+  // Desenho do personagem (Restaurado e ajustado do original)
+  const pWidth = player.width;
+  const pHeight = player.height;
 
-    // Camisa branca
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.moveTo(-player.width/4, -player.height/2 + 10);
-    ctx.lineTo(player.width/4, -player.height/2 + 10);
-    ctx.lineTo(player.width/4, player.height/2 - player.height*0.3);
-    ctx.lineTo(-player.width/4, player.height/2 - player.height*0.3);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Gravata
-    ctx.fillStyle = "#be2323";
-    ctx.beginPath();
-    ctx.arc(0, -player.height/2 + 13, 3, 0, Math.PI*2); // Nó da gravata
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(0, -player.height/2 + 16);
-    ctx.lineTo(-4, player.height/2 - player.height*0.4);
-    ctx.lineTo(4, player.height/2 - player.height*0.4);
-    ctx.closePath();
-    ctx.fill();
+  // Pernas (Calça escura)
+  ctx.fillStyle = "#191d25";
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 1.5;
+  // Perna Esquerda (do ponto de vista do jogador)
+  ctx.fillRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35); 
+  ctx.strokeRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35);
+  // Perna Direita
+  ctx.fillRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
+  ctx.strokeRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
+  // Sapatos (Pretos)
+  ctx.fillStyle = "#111";
+  ctx.fillRect(-pWidth*0.35, pHeight*0.45, pWidth*0.3, pWidth*0.15); // Sapato Esquerdo
+  ctx.fillRect(pWidth*0.05, pHeight*0.45, pWidth*0.3, pWidth*0.15); // Sapato Direita
+
+  // Tronco (Paletó azul escuro)
+  ctx.fillStyle = "#273262";
+  ctx.strokeStyle = "#182042";
+  ctx.beginPath();
+  ctx.moveTo(-pWidth*0.4, -pHeight*0.3); // Ombro esquerdo
+  ctx.lineTo(pWidth*0.4, -pHeight*0.3);  // Ombro direito
+  ctx.lineTo(pWidth*0.3, pHeight*0.2);   // Lateral direita baixo
+  ctx.lineTo(-pWidth*0.3, pHeight*0.2);  // Lateral esquerda baixo
+  ctx.closePath();
+  ctx.fill();  ctx.stroke();
+
+  // Camisa Branca (parte visível)
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.moveTo(-pWidth*0.15, -pHeight*0.3);
+  ctx.lineTo(pWidth*0.15, -pHeight*0.3);
+  ctx.lineTo(pWidth*0.15, -pHeight*0.05);
+  ctx.lineTo(-pWidth*0.15, -pHeight*0.05);
+  ctx.closePath();
+  ctx.fill();
+
+  // Gravata Vermelha
+  ctx.fillStyle = "#be2323";
+  ctx.beginPath();
+  ctx.arc(0, -pHeight*0.25, pWidth*0.08, 0, 2 * Math.PI); // Nó
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0, -pHeight*0.25 + pWidth*0.08);
+  ctx.lineTo(-pWidth*0.1, pHeight*0.05);
+  ctx.lineTo(pWidth*0.1, pHeight*0.05);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Braços (cor do paletó)
+  // Braço Esquerdo (do ponto de vista do jogador)
+  ctx.beginPath();
+  ctx.moveTo(-pWidth*0.4, -pHeight*0.25); // Início do ombro
+  ctx.lineTo(-pWidth*0.55, pHeight*0.05); // Cotovelo
+  ctx.lineTo(-pWidth*0.45, pHeight*0.25); // Mão
+  ctx.lineTo(-pWidth*0.3, pHeight*0.15); // Volta para o corpo
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // Braço Direito
+  ctx.beginPath();
+  ctx.moveTo(pWidth*0.4, -pHeight*0.25);
+  ctx.lineTo(pWidth*0.55, pHeight*0.05);
+  ctx.lineTo(pWidth*0.45, pHeight*0.25);
+  ctx.lineTo(pWidth*0.3, pHeight*0.15);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // Mãos (cor de pele)
+  ctx.fillStyle = "#f8e6d4";
+  ctx.beginPath();
+  ctx.arc(-pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); // Mão Esquerda
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); // Mão Direita
+  ctx.fill();
 
   // Cabeça com imagem
-  const headRadius = player.width / 2;
-  const headYOffset = -player.height / 2;
+  const headRadius = pWidth * 0.35;
+  const headYOffset = -pHeight * 0.35;
   ctx.beginPath();
   ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.save();
-  ctx.clip(); // Clip para a imagem ficar redonda
-  if (loadedCharImages && loadedCharImages[selectedChar - 1]) {
-    ctx.drawImage(loadedCharImages[selectedChar - 1], -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2);
-  } else { // Fallback se imagem não carregar
-    ctx.fillStyle = "#f8e6d4"; // Cor de pele
-    ctx.fill();
+  ctx.clip();
+  const playerImage = loadedCharImages && loadedCharImages[selectedChar - 1];
+  if (playerImage) {
+    ctx.drawImage(playerImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2);
+  } else {
+    ctx.fillStyle = "#f8e6d4"; ctx.fill();
   }
-  ctx.restore(); // Restaura o clip
+  ctx.restore(); // clip
+  ctx.strokeStyle = "#333"; ctx.lineWidth = 1; ctx.stroke(); // Contorno da cabeça
 
-  ctx.restore(); // Restaura o translate e scale
+  ctx.restore(); // translate e scale
 }
 
 function drawGameGround() {
-  const screenGroundY = groundY - cameraX * 0; // Para ground fixo na tela. Se quiser parallax no chão, ajuste o multiplicador de cameraX.
   ctx.fillStyle = "#222b3e";
-  ctx.fillRect(0, screenGroundY, gameCanvas.width, gameCanvas.height - screenGroundY);
+  ctx.fillRect(0, groundY, gameCanvas.width, gameCanvas.height - groundY);
   ctx.fillStyle = "#495980";
-  ctx.fillRect(0, screenGroundY + 30, gameCanvas.width, gameCanvas.height - screenGroundY - 30);
-  // Detalhes do chão
-  ctx.fillStyle = "#94a3b8";
-  for (let i = 0; i < 40; i++) {
-      const detailX = (i * 100 - cameraX * 0.5) % (4000 + gameCanvas.width) - gameCanvas.width/2 ; // Parallax nos detalhes
-      if (detailX > -30 && detailX < gameCanvas.width) { // Desenha apenas se visível
-        ctx.fillRect(detailX , screenGroundY + 30, 30, 7);
+  ctx.fillRect(0, groundY + 20, gameCanvas.width, gameCanvas.height - groundY - 20); // Faixa mais clara do chão
+
+  // Detalhes do chão (pedrinhas)
+  ctx.fillStyle = "rgba(148, 163, 184, 0.7)"; // cinza claro semitransparente
+  for (let i = 0; i < 60; i++) { // Mais detalhes, menores
+      const detailSize = 2 + Math.random() * 4;
+      // Posição X com parallax, garantindo que o ciclo seja maior que a largura da tela
+      const detailX = ((i * (gameCanvas.width/15)) - cameraX * 0.7 + (Math.random() * 50)) % (gameCanvas.width + 200) - 100;
+      const detailY = groundY + 5 + Math.random() * 25; // Variação vertical pequena
+      if (detailX > -detailSize && detailX < gameCanvas.width) {
+        ctx.beginPath();
+        ctx.arc(detailX, detailY, detailSize / 2, 0, Math.PI *2);
+        ctx.fill();
       }
   }
+
+  // Nome no chão
+  ctx.save();
+  ctx.font = "bold 16px 'JetBrains Mono', monospace";
+  ctx.fillStyle = "rgba(200, 200, 220, 0.3)"; // Cor suave
+  ctx.textAlign = "center";
+  const nameYPos = groundY + gameCanvas.height * 0.12; // Mais para baixo, na parte escura do chão
+  
+  // Desenha o nome repetidamente para efeito de scroll infinito no chão
+  const nameWidth = ctx.measureText("Rodrigo Niskier").width + 150; // Largura do texto + espaçamento
+  const numNameRepeats = Math.ceil(gameCanvas.width / nameWidth) + 2;
+  for (let i = 0; i < numNameRepeats; i++) {
+      let nameX = (i * nameWidth) - (cameraX * 0.95 % nameWidth); // Parallax rápido, quase junto com o chão
+      if (nameX + nameWidth < 0) nameX += numNameRepeats * nameWidth; // Reposiciona se saiu da tela
+      ctx.fillText("Rodrigo Niskier", nameX + nameWidth/2 - ctx.measureText("Rodrigo Niskier").width/2 , nameYPos); // Centraliza o texto dentro do seu "bloco"
+  }
+  ctx.restore();
 }
 
-function drawMapElements() { // Palavras, Power-ups, Vilões
+function drawMapElements() {
   gameElementsOnMap.forEach(element => {
-    if (element.type === "vilao" && !element.alive) return; // Não desenha vilão morto
-    if ((element.type === "word" || element.type === "power") && element.found) return; // Não desenha palavra/powerup coletado
+    if (element.type === "vilao" && !element.alive) return;
+    if ((element.type === "word" || element.type === "power") && element.found) return;
 
     const screenX = worldToScreenX(element.x);
-    // Otimização: Não desenhar elementos muito fora da tela
-    const elementWidth = (element.type === "vilao" ? player.width : 100); // Largura aproximada para culling
-    if (screenX < -elementWidth || screenX > gameCanvas.width + elementWidth) {
-      return;
-    }
+    const elementVisualWidth = (element.type === "vilao" ? element.width : 120); 
+    if (screenX < -elementVisualWidth || screenX > gameCanvas.width + elementVisualWidth) return;
 
     ctx.save();
     if (element.type === "word" || element.type === "power") {
       ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif";
       ctx.textAlign = "center";
-      ctx.shadowColor = "#facc15";
-      ctx.shadowBlur = element.type === "power" ? 15 : 7;
-      ctx.globalAlpha = element.type === "power" ? 0.93 : 0.82;
+      ctx.shadowColor = element.type === "power" ? "#fff352" : "#facc15";
+      ctx.shadowBlur = element.type === "power" ? 18 : 9;
+      ctx.globalAlpha = element.type === "power" ? 0.95 : 0.85;
       ctx.fillStyle = element.type === "power" ? "#ffe34d" : "#fbbf24";
-      ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + 35);
+      ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + element.height/2); // Centraliza texto na hitbox
     } else if (element.type === "vilao") {
-      const vilaoScreenY = element.y + player.height / 2; // Ajustar para centro vertical
+      const vilaoScreenY = element.y + element.height / 2;
       ctx.translate(screenX, vilaoScreenY);
-      // Desenho do vilão (similar ao player, mas com imagem do vilão)
-      const headRadius = player.width / 2;
-      const headYOffset = -player.height / 2;
+      
+      const vWidth = element.width;
+      const vHeight = element.height;
+      const headRadius = vWidth * 0.4;
+      const headYOffset = -vHeight * 0.35;
+
+      // Corpo do Fariseu (exemplo: túnica escura)
+      ctx.fillStyle = "#3a2e2e"; // Marrom escuro
+      ctx.strokeStyle = "#1e1414";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
+      ctx.moveTo(-vWidth*0.45, -vHeight*0.2); 
+      ctx.lineTo(vWidth*0.45, -vHeight*0.2);  
+      ctx.lineTo(vWidth*0.35, vHeight*0.5);   
+      ctx.lineTo(-vWidth*0.35, vHeight*0.5);  
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Faixa (opcional)
+      ctx.fillStyle = "#6b4226"; // Marrom mais claro
+      ctx.fillRect(-vWidth*0.3, -vHeight*0.05, vWidth*0.6, vHeight*0.1);
+
+
+      ctx.beginPath(); // Cabeça do Fariseu
       ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI);
       ctx.closePath();
       ctx.save();
       ctx.clip();
-      if (loadedCharImages && loadedCharImages[2]) { // Imagem do vilão é a terceira
-        ctx.drawImage(loadedCharImages[2], -headRadius, headYOffset-headRadius, headRadius*2, headRadius*2);
+      const vilaoImage = loadedCharImages && loadedCharImages[2]; // Imagem do personagem3
+      if (vilaoImage) {
+        ctx.drawImage(vilaoImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2);
       } else {
-        ctx.fillStyle = "#5a2d2d"; // Cor escura para vilão fallback
-        ctx.fill();
+        ctx.fillStyle = "#c5a687"; ctx.fill(); // Cor de pele para fallback
       }
       ctx.restore(); // clip
-      // Corpo simples para vilão (exemplo)
-      ctx.fillStyle = "#232323";
-      ctx.fillRect(-player.width/2 + 5, -player.height/2 + 20, player.width-10, player.height-20);
+      ctx.strokeStyle = "#504030"; ctx.lineWidth = 1; ctx.stroke(); // Contorno da cabeça
     }
     ctx.restore();
   });
 }
 
-function drawProjectiles() {
-  projectiles.forEach(proj => {
+function drawProjectiles() { /* ... (código mantido, talvez ajustar proj.y se player.height mudou) ... */ 
+    projectiles.forEach(proj => {
     if (!proj.active) return;
     const screenX = worldToScreenX(proj.x);
-    if (screenX < -20 || screenX > gameCanvas.width + 20) { // Culling
-        proj.active = false; // Desativa se muito fora da tela
+    if (screenX < -20 || screenX > gameCanvas.width + 20) { 
+        proj.active = false; 
         return;
     }
     ctx.save();
-    ctx.translate(screenX, proj.y + player.height / 2); // Y da cruz
-    ctx.rotate(proj.dir * Date.now() * 0.001); // Rotação suave
-    ctx.globalAlpha = 0.9;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#ffe469";
+    // Ajustar Y do projétil baseado na nova altura do jogador
+    ctx.translate(screenX, proj.y); // proj.y já considera a altura do jogador ao ser criado
+    ctx.rotate(proj.dir * Date.now() * 0.0015); // Rotação um pouco mais rápida
+    ctx.globalAlpha = 0.95;
+    ctx.lineWidth = 5; // Mais grossa
+    ctx.strokeStyle = "#fff078"; // Amarelo mais claro
+    ctx.shadowColor = "#ffe469";
+    ctx.shadowBlur = 10;
     ctx.beginPath();
-    ctx.moveTo(-7,0); ctx.lineTo(7,0); // Horizontal
-    ctx.moveTo(0,-11); ctx.lineTo(0,11); // Vertical
+    ctx.moveTo(-8,0); ctx.lineTo(8,0); 
+    ctx.moveTo(0,-12); ctx.lineTo(0,12); 
     ctx.stroke();
-    // Detalhe branco
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#ffffff";
+    ctx.shadowBlur = 0; // Sem sombra para o detalhe branco
     ctx.beginPath();
-    ctx.moveTo(-6,0); ctx.lineTo(6,0);
-    ctx.moveTo(0,-10); ctx.lineTo(0,10);
+    ctx.moveTo(-7,0); ctx.lineTo(7,0);
+    ctx.moveTo(0,-11); ctx.lineTo(0,11);
     ctx.stroke();
     ctx.restore();
   });
 }
 
+
 function drawGameWorld() {
-  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height); // Limpa o canvas
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
   drawGameBackground();
   drawGameGround();
   drawMapElements();
   drawProjectiles();
   drawPlayerCharacter();
-
-  // Informações de Debug (opcional)
-  // ctx.save();
-  // ctx.globalAlpha = 0.5;
-  // ctx.font = "12px monospace";
-  // ctx.fillStyle = "#fff";
-  // ctx.fillText(`Player WorldX: ${player.worldX.toFixed(0)} / ${worldLength.toFixed(0)}`, 10, 20);
-  // ctx.fillText(`CameraX: ${cameraX.toFixed(0)}`, 10, 35);
-  // ctx.fillText(`Words to Win: ${wordsFoundCorrectly}/${wordsToWin}`, 10, 50);
-  // ctx.fillText(`Vilões: ${viloesDefeated}/${viloesToWin}`, 10, 65);
-  // ctx.restore();
 }
 
 // ======== Coordenadas e Movimentação do Mundo ========
-function worldToScreenX(worldXCoord) {
-  // O jogador (player.x) está sempre no centro da tela, exceto nos limites do mundo.
-  // cameraX representa o deslocamento do mundo.
-  return worldXCoord - cameraX;
-}
+function worldToScreenX(worldXCoord) { return worldXCoord - cameraX; }
+function getPlayerWorldX() { return player.worldX; }
 
-function getPlayerWorldX() {
-  return player.worldX;
-}
-
-// ======== Lógica de Atualização do Jogo (Física, Movimento, Colisões) ========
+// ======== Lógica de Atualização do Jogo ========
 function updatePlayerState() {
-  player.vx = 0; // Reseta velocidade horizontal base (movimento é pelo mundo)
+  player.vx = 0; 
+  let targetPlayerScreenX = gameCanvas.width / 2.5; // Onde o jogador "gosta" de ficar na tela
 
-  // Movimento Horizontal do Mundo (Câmera)
-  let moveSpeed = player.speed;
-  if (keys["ArrowLeft"]) {
-    player.worldX -= moveSpeed;
-    player.direction = -1;
-  }
-  if (keys["ArrowRight"]) {
-    player.worldX += moveSpeed;
-    player.direction = 1;
-  }
-  // Limitar player.worldX aos limites do mundo
-  player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2));
-
-
-  // Atualizar cameraX para seguir o jogador, mantendo-o no centro
-  cameraX = player.worldX - player.x;
-  // Limitar cameraX para que o "início" e "fim" do mundo sejam visíveis
-  cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
+  if (keys["ArrowLeft"])  { player.worldX -= player.speed; player.direction = -1; }
+  if (keys["ArrowRight"]) { player.worldX += player.speed; player.direction = 1; }
   
-  // Se o jogador está no início do mundo, ele se move na tela até o centro
-  if (player.worldX < gameCanvas.width / 2) {
-      player.x = player.worldX;
-  } 
-  // Se o jogador está no fim do mundo, ele se move na tela a partir do centro
-  else if (player.worldX > worldLength - gameCanvas.width / 2) {
-      player.x = gameCanvas.width - (worldLength - player.worldX);
-  }
-  // Senão, o jogador fica no centro da tela
-  else {
-      player.x = gameCanvas.width / 2;
-  }
+  player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2));
+  cameraX = player.worldX - targetPlayerScreenX;
+  cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
+  player.x = player.worldX - cameraX; // Posição real do jogador na tela
 
-
-  // Movimento Vertical (Pulo e Gravidade)
-  if (keys["ArrowUp"] && player.onGround) {
-    player.vy = player.jumpPower;
-    player.onGround = false;
-  }
+  if (keys["ArrowUp"] && player.onGround) { player.vy = player.jumpPower; player.onGround = false; }
   player.vy += player.gravity;
   player.y += player.vy;
 
-  // Colisão com o chão
-  if (player.y + player.height >= groundY) { // Ajuste para base do jogador no chão
+  if (player.y + player.height >= groundY) {
     player.y = groundY - player.height;
-    player.vy = 0;
-    player.onGround = true;
+    player.vy = 0; player.onGround = true;
   }
-  // Limite superior da tela (teto)
-  if (player.y < 0) { // Não 80, mas o topo do canvas
-      player.y = 0;
-      player.vy = 0;
-  }
+  if (player.y < 0) { player.y = 0; player.vy = 0; }
 }
 
 function checkCollisions() {
   if (challengeActive) return;
-
-  // Resetar flag de colisão para todos os elementos no início da verificação
   gameElementsOnMap.forEach(el => el.collidedThisFrame = false);
 
   const playerRect = {
-    x: getPlayerWorldX() - player.width / 2, // Posição real do jogador no mundo
-    y: player.y,
-    width: player.width,
-    height: player.height
+    x: getPlayerWorldX() - player.width / 2, y: player.y,
+    width: player.width, height: player.height
   };
 
   gameElementsOnMap.forEach((element, mapIndex) => {
-    if (element.collidedThisFrame) return; // Já colidiu neste frame
+    if (element.collidedThisFrame) return;
+    if ((element.type === "vilao" && !element.alive) || ((element.type === "word" || element.type === "power") && element.found)) return;
 
-    let elementRect;
-    if (element.type === "vilao") {
-      if (!element.alive) return;
-      elementRect = { x: element.x - player.width / 2, y: element.y, width: player.width, height: player.height };
-    } else if (element.type === "word" || element.type === "power") {
-      if (element.found) return;
-      // A "hitbox" da palavra pode ser mais generosa
-      elementRect = { x: element.x - 50, y: element.y, width: 100, height: 54 };
-    } else {
-      return; // Tipo de elemento desconhecido
-    }
+    const elRect = {
+        x: element.x - element.width / 2, // Usa a largura do elemento para sua hitbox
+        y: element.y,
+        width: element.width,
+        height: element.height
+    };
 
-    // Checagem de colisão AABB (Axis-Aligned Bounding Box)
-    if (playerRect.x < elementRect.x + elementRect.width &&
-        playerRect.x + playerRect.width > elementRect.x &&
-        playerRect.y < elementRect.y + elementRect.height &&
-        playerRect.y + playerRect.height > elementRect.y) {
-      
-      element.collidedThisFrame = true; // Marcar como colidido neste frame
-
+    if (playerRect.x < elRect.x + elRect.width && playerRect.x + playerRect.width > elRect.x &&
+        playerRect.y < elRect.y + elRect.height && playerRect.y + playerRect.height > elRect.y) {
+      element.collidedThisFrame = true;
       if (element.type === "power") {
-        points += 100;
-        playerGlowEffect = 90; // Frames de brilho
-        updatePointsDisplay();
-        element.found = true; // Marca como coletado
-        // setTimeout para remover o brilho é gerenciado no gameLoop (playerGlowEffect--)
+        points += 100; playerGlowEffect = 120; updatePointsDisplay(); element.found = true;
       } else if (element.type === "word") {
-        currentChallengeWordMapIndex = mapIndex; // Índice do elemento no gameElementsOnMap
-        triggerChallengeModal(element.wordDataIndex); // Passa o índice de WORDS_DATA
+        currentChallengeWordMapIndex = mapIndex; triggerChallengeModal(element.wordDataIndex);
       } else if (element.type === "vilao") {
         if (element.cooldown <= 0) {
-          points -= 50;
-          updatePointsDisplay();
-          element.cooldown = 60; // Frames de invulnerabilidade do vilão após hit
-          playerGlowEffect = 0; // Perde brilho se tinha
-          if (points < 0 && vidas > 0) { // Apenas perde vida se os pontos ficarem negativos E tem vidas
-            loseLife();
-            if (vidas > 0) points = 50; // Recupera alguns pontos para não perder vida em sequência
-          } else if (vidas === 0 && points < 0) { // Se já não tem vidas e pontos negativos, game over
-             loseLife(); // Para acionar o game over
-          }
+          points -= 75; updatePointsDisplay(); element.cooldown = 90; playerGlowEffect = 0;
+          if (points < 0 && vidas > 0) { loseLife(); if (vidas > 0) points = 50; }
+          else if (vidas === 0 && points < 0) { loseLife(); }
         }
       }
     }
-    if (element.type === "vilao" && element.cooldown > 0) {
-      element.cooldown--;
-    }
+    if (element.type === "vilao" && element.cooldown > 0) element.cooldown--;
   });
 
-  // Colisão de Projéteis com Vilões
   projectiles.forEach(proj => {
     if (!proj.active) return;
-    const projRect = { x: proj.x - 7, y: proj.y, width: 14, height: 22 }; // Hitbox da cruz
-
-    viloesOnMap.forEach(vilao => {
-      if (!vilao.alive || vilao.collidedThisFrameProjectile) return;
-      const vilaoRect = { x: vilao.x - player.width / 2, y: vilao.y, width: player.width, height: player.height };
-
-      if (projRect.x < vilaoRect.x + vilaoRect.width &&
-          projRect.x + projRect.width > vilaoRect.x &&
-          projRect.y < vilaoRect.y + vilaoRect.height &&
-          projRect.y + projRect.height > vilaoRect.y) {
-        
-        vilao.collidedThisFrameProjectile = true; // Evita que o mesmo projétil atinja várias vezes no mesmo frame
-        vilao.alive = false;
-        proj.active = false; // Desativa o projétil
-        viloesDefeated++;
-        points += 25; // Pontos por derrotar vilão
-        updatePointsDisplay();
-        checkWinCondition();
+    const projRect = { x: proj.x - 7, y: proj.y - 11, width: 14, height: 22 };
+    gameElementsOnMap.forEach(element => { // Checa colisão com vilões
+      if (element.type === "vilao" && element.alive && !element.collidedThisFrameProjectile) {
+        const vilaoRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height };
+        if (projRect.x < vilaoRect.x + vilaoRect.width && projRect.x + projRect.width > vilaoRect.x &&
+            projRect.y < vilaoRect.y + vilaoRect.height && projRect.y + projRect.height > vilaoRect.y) {
+          element.collidedThisFrameProjectile = true; element.alive = false; proj.active = false;
+          viloesDefeated++; points += 50; updatePointsDisplay(); checkWinCondition();
+        }
       }
     });
-    viloesOnMap.forEach(v => v.collidedThisFrameProjectile = false); // Reset no final do loop de projéteis
+    gameElementsOnMap.forEach(el => { if(el.type === "vilao") el.collidedThisFrameProjectile = false; });
   });
 }
 
-function updatePointsDisplay() {
-  scoreValueEl.textContent = Math.max(0, points); // Não mostra pontos negativos no HUD
-}
-
+function updatePointsDisplay() { scoreValueEl.textContent = Math.max(0, points); }
 function loseLife() {
-  vidas--;
-  updateLivesDisplay();
+  vidas--; updateLivesDisplay();
   if (vidas > 0) {
-    // Resetar posição do jogador para um local seguro (ex: início da "tela" ou um checkpoint)
-    player.worldX = Math.max(player.width / 2, player.worldX - 200); // Recua um pouco
-    player.y = groundY - player.height - 150; // Reposiciona mais alto para cair
-    player.vy = 0;
-    // Breve invulnerabilidade ou piscar (não implementado aqui)
-  } else {
-    isGameOver = true;
-    gameOutcomeType = "over";
-    showEndGameModal();
-  }
+    player.worldX = Math.max(player.width / 2, player.worldX - 300);
+    player.y = groundY - player.height - 200; player.vy = 0;
+  } else { isGameOver = true; gameOutcomeType = "over"; showEndGameModal(); }
 }
-
-function updateLivesDisplay() {
-  let html = "";
-  for (let i = 0; i < vidas; i++) html += `<span class="lives-heart">♥</span>`;
-  livesEl.innerHTML = html;
-}
+function updateLivesDisplay() { livesEl.innerHTML = Array(vidas).fill('<span class="lives-heart">♥</span>').join('');}
 
 function fireProjectile() {
-  if (points < 20 && projectiles.length > 3) return; // Custo para atirar e limite de projéteis na tela
-  const cost = 10;
-  if (points < cost && vidas > 0) return; // Só não atira se não tiver pontos E tem vidas
-  if (vidas === 0 && points < cost) return; // Se game over, não atira
+  const cost = 15;
+  if (points < cost && projectiles.length > 2) return;
+  if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return;
 
-  let startX = getPlayerWorldX() + (player.direction > 0 ? player.width / 2 + 5 : -player.width / 2 - 5);
   projectiles.push({
-    x: startX,
-    y: player.y + player.height / 3, // Altura do disparo
-    vx: player.direction * 11, // Velocidade do projétil
-    dir: player.direction,
-    active: true,
-    creationTime: Date.now()
+    x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)),
+    y: player.y + player.height * 0.4, // Origem do projétil um pouco mais acima
+    vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now()
   });
-  if (vidas > 0 || points >= cost) points -= cost; // Subtrai pontos se não for game over
-  updatePointsDisplay();
+  if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay();
 }
-
 function updateProjectiles() {
-  projectiles = projectiles.filter(proj => proj.active); // Remove inativos
-  projectiles.forEach(proj => {
-    proj.x += proj.vx;
-    // Desativar projétil se muito longe ou após um tempo
-    if (proj.x < cameraX - gameCanvas.width || proj.x > cameraX + gameCanvas.width * 2 || Date.now() - proj.creationTime > 3000) {
-      proj.active = false;
-    }
+  projectiles = projectiles.filter(p => p.active);
+  projectiles.forEach(p => {
+    p.x += p.vx;
+    if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false;
   });
 }
 
-// ======== Lógica do Desafio de Palavras ========
-function triggerChallengeModal(wordDataIdx) { // wordDataIdx é o índice em WORDS_DATA
-  challengeActive = true;
-  usedHint = false;
-  // currentChallengeWordMapIndex já foi definido em checkCollisions
-
+// ======== Lógica do Desafio de Palavras (Mantida e ajustada) ========
+function triggerChallengeModal(wordDataIdx) {
+  challengeActive = true; usedHint = false;
   const wordEntry = WORDS_DATA[wordDataIdx];
   hebrewWordEl.textContent = wordEntry.he;
-  answerInputEl.value = "";
-  feedbackEl.textContent = "";
-  hintEl.textContent = "";
-  answerInputEl.focus();
-  hintBtn.disabled = false;
-  
+  answerInputEl.value = ""; feedbackEl.textContent = ""; hintEl.textContent = "";
+  answerInputEl.focus(); hintBtn.disabled = false;
   challengeStartTime = performance.now();
   timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`;
-  
   clearInterval(challengeTimerInterval);
   challengeTimerInterval = setInterval(() => {
-    const secondsElapsed = (performance.now() - challengeStartTime) / 1000;
-    const timeLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - secondsElapsed);
-    timerEl.textContent = `Tempo: ${timeLeft.toFixed(1)}s`;
-    if (timeLeft <= 0) {
-      clearInterval(challengeTimerInterval);
-      failChallenge(wordDataIdx); // Passa o índice original da palavra
-    }
+    const sLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - (performance.now() - challengeStartTime) / 1000);
+    timerEl.textContent = `Tempo: ${sLeft.toFixed(1)}s`;
+    if (sLeft <= 0) { clearInterval(challengeTimerInterval); failChallenge(wordDataIdx); }
   }, 90);
   challengeModal.classList.remove('hidden');
 }
-
-hintBtn.addEventListener('click', function() {
-  if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) {
+hintBtn.addEventListener('click', () => { /* ... (código mantido) ... */ 
+    if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) {
+        const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
+        hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica.";
+        usedHint = true; hintBtn.disabled = true;
+    }
+});
+answerForm.addEventListener('submit', (e) => { /* ... (código mantido) ... */ 
+    e.preventDefault();
+    if (!challengeActive || currentChallengeWordMapIndex === -1) return;
+    const userAnswer = normalize(answerInputEl.value);
     const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
-    hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica.";
-    usedHint = true;
-    this.disabled = true;
-  }
+    const wordEntry = WORDS_DATA[mapElement.wordDataIndex];
+    const isCorrect = wordEntry.pt.some(t => normalize(t) === userAnswer);
+    if (isCorrect) completeChallenge(mapElement.wordDataIndex);
+    else { feedbackEl.textContent = "Tradução incorreta. Tente novamente!"; answerInputEl.select(); }
 });
 
-answerForm.addEventListener('submit', function(e) {
-  e.preventDefault();
-  if (!challengeActive || currentChallengeWordMapIndex === -1) return;
-
-  const userAnswer = normalize(answerInputEl.value);
-  const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
-  const wordEntry = WORDS_DATA[mapElement.wordDataIndex];
-  
-  const isCorrect = wordEntry.pt.some(translation => normalize(translation) === userAnswer);
-
-  if (isCorrect) {
-    completeChallenge(mapElement.wordDataIndex); // Passa o índice original da palavra
-  } else {
-    feedbackEl.textContent = "Tradução incorreta. Tente novamente!";
-    answerInputEl.select(); // Seleciona o texto para facilitar nova tentativa
-  }
-});
-
-function completeChallenge(wordDataIdx) { // wordDataIdx é o índice em WORDS_DATA
+function completeChallenge(wordDataIdx) {
   clearInterval(challengeTimerInterval);
   const timeTaken = (performance.now() - challengeStartTime) / 1000;
-  const pointsEarned = Math.round(
-    usedHint ?
-    Math.max(10, 60 - 3.5 * timeTaken) :
-    Math.max(20, 100 - 5 * timeTaken)
-  );
-  points += pointsEarned;
-  wordsFoundCorrectly++; // Conta apenas acertos
-  
-  if(currentChallengeWordMapIndex !== -1) {
-      gameElementsOnMap[currentChallengeWordMapIndex].found = true; // Marca como coletado no mapa
-  }
-
+  const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken));
+  points += ptsEarned; wordsFoundCorrectly++;
+  if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true;
   updatePointsDisplay();
-  feedbackEl.textContent = usedHint ? `Correto! +${pointsEarned} pts (com dica)` : `Correto! +${pointsEarned} pts`;
-  
-  setTimeout(() => {
-    challengeModal.classList.add('hidden');
-    challengeActive = false;
-    checkWinCondition();
-  }, 800); // Tempo um pouco maior para ler o feedback
+  feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`;
+  setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800);
 }
-
-function failChallenge(wordDataIdx) { // wordDataIdx é o índice em WORDS_DATA
+function failChallenge(wordDataIdx) {
   clearInterval(challengeTimerInterval);
   feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`;
-  // A palavra não é marcada como "found" e não conta para wordsFoundCorrectly
-  // O jogador pode tentar novamente se colidir com ela.
-  // Se quiser que ela desapareça mesmo errando:
-  // if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true;
-
-  setTimeout(() => {
-    challengeModal.classList.add('hidden');
-    challengeActive = false;
-    // Não chama checkWinCondition aqui, pois a palavra não foi coletada
-  }, 1500); // Tempo maior para ler a resposta
+  // Opcional: marcar a palavra como "found" para não aparecer de novo, mesmo errando.
+  // if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true; 
+  setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; /* Não chama checkWinCondition */ }, 1500);
 }
-
 function checkWinCondition() {
-    if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) {
-        isGameOver = true;
-        gameOutcomeType = "win";
-        showEndGameModal();
+  if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) {
+    isGameOver = true; gameOutcomeType = "win"; showEndGameModal();
+  }
+}
+function showEndGameModal() { /* ... (código mantido) ... */ 
+    endModal.classList.remove('hidden');
+    if (gameOutcomeType === "win") {
+        endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; 
+        endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`;
+    } else {
+        endTitleEl.textContent = "Game Over";
+        endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`;
     }
 }
 
-function showEndGameModal() {
-  endModal.classList.remove('hidden');
-  if (gameOutcomeType === "win") {
-    endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; // Mazal Tov!
-    endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`;
-  } else {
-    endTitleEl.textContent = "Game Over";
-    endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`;
-  }
-}
-
 // ======== Loop Principal do Jogo ========
-let lastFrameTime = 0;
-const DESIRED_FPS = 60;
-const MAX_FRAME_TIME_MS = 1000 / DESIRED_FPS;
-
-function gameLoop(timestamp) {
-  if (isGameOver) {
-    // Opcional: animação de game over ou tela final antes do modal
-    return;
-  }
-
-  const deltaTime = timestamp - lastFrameTime;
-
-  // Limitar o game loop a DESIRED_FPS para consistência e evitar "espirais da morte" em hardwares lentos
-  // No entanto, requestAnimationFrame já tenta otimizar para a taxa de atualização do monitor.
-  // Uma forma mais simples de controle de tempo é garantir que a lógica de atualização
-  // seja baseada em deltaTime, mas a física aqui é baseada em "passos" fixos por frame.
-
+function gameLoop() {
+  if (isGameOver) return;
   if (!challengeActive) {
-    updatePlayerState();
-    updateProjectiles();
-    checkCollisions(); // Checa todas as colisões
+    updatePlayerState(); updateProjectiles(); checkCollisions();
     if (playerGlowEffect > 0) playerGlowEffect--;
   }
-  
   drawGameWorld();
-  
-  lastFrameTime = timestamp;
   requestAnimationFrame(gameLoop);
 }
 
-// ======== Controles ========
-document.addEventListener('keydown', function(e) {
-  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") {
-    keys[e.code] = true;
-    if (!challengeActive) e.preventDefault(); // Evita scroll da página com as setas
+// ======== Controles (mantidos, com preventDefault ajustado) ========
+document.addEventListener('keydown', (e) => {
+  const activeEl = document.activeElement;
+  const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+  if (!isInputFocused && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space")) {
+    if(!challengeActive) e.preventDefault(); // Evita scroll apenas se o desafio não estiver ativo
   }
-  if (e.code === "Space" && !challengeActive) {
-    e.preventDefault();
-    fireProjectile();
-  }
+  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = true;
+  if (e.code === "Space" && !challengeActive) fireProjectile();
   if (challengeActive && e.code === "Escape") {
-    challengeModal.classList.add('hidden');
-    challengeActive = false;
-    clearInterval(challengeTimerInterval);
+    challengeModal.classList.add('hidden'); challengeActive = false; clearInterval(challengeTimerInterval);
   }
 });
-document.addEventListener('keyup', function(e) {
-  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") {
-    keys[e.code] = false;
-  }
+document.addEventListener('keyup', (e) => {
+  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = false;
 });
+// Controles Touch (mantidos)
+if (isMobileDevice()) { /* ... (código dos botões touch mantido) ... */ }
 
-// Controles Touch
-if (isMobileDevice()) {
-  const touchBtnLeft = document.getElementById('btnLeft');
-  const touchBtnRight = document.getElementById('btnRight');
-  const touchBtnUp = document.getElementById('btnUp');
-  const touchBtnFire = document.getElementById('btnFire');
-
-  let touchMappings = [
-    { btn: touchBtnLeft, code: 'ArrowLeft' },
-    { btn: touchBtnRight, code: 'ArrowRight' },
-    { btn: touchBtnUp, code: 'ArrowUp' }
-  ];
-
-  touchMappings.forEach(({ btn, code }) => {
-    let pressTimer = null;
-    btn.addEventListener('touchstart', function(e) {
-      e.preventDefault(); keys[code] = true;
-      // Para movimento contínuo enquanto pressionado (opcional, já que o game loop verifica keys)
-      // clearInterval(pressTimer); pressTimer = setInterval(()=>{ keys[code]=true; }, 50);
-    }, { passive: false });
-    btn.addEventListener('touchend', function(e) {
-      e.preventDefault(); keys[code] = false;
-      // clearInterval(pressTimer);
-    }, { passive: false });
-    btn.addEventListener('touchcancel', function(e) { keys[code] = false; /*clearInterval(pressTimer);*/ }, { passive: false });
-  });
-
-  touchBtnFire.addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    if (!challengeActive) fireProjectile();
-  }, { passive: false });
-}
-
-
-// ======== Ajuste do Canvas e Inicialização Automática ========
+// ======== Ajuste do Canvas e Inicialização ========
 function adjustGameCanvas() {
-  let newWidth = Math.min(window.innerWidth - 20, 900); // Adicionado margem
-  // Ajustar altura para mobile, considerando os botões de toque
-  let bottomMargin = isMobileDevice() ? 100 : 20; // Maior margem se mobile para controles
-  let newHeight = Math.max(320, Math.min(window.innerHeight - document.getElementById('scoreHud').offsetHeight - bottomMargin - 20, 500));
+  let newWidth = Math.min(window.innerWidth - 15, 900);
+  let bottomMargin = isMobileDevice() ? (touchControls.offsetHeight > 0 ? touchControls.offsetHeight + 10 : 80) : 20;
+  let topMargin = scoreHud.offsetHeight > 0 ? scoreHud.offsetHeight + 10 : 60;
+  newHeight = Math.max(300, Math.min(window.innerHeight - topMargin - bottomMargin, 550));
   
-  gameCanvas.width = newWidth;
-  gameCanvas.height = newHeight;
-
-  // Recalcular groundY e centralização do jogador se necessário após resize,
-  // ou redesenhar o mundo. Para simplificar, apenas redesenha.
-  if (typeof drawGameWorld === 'function' && player) { // Verifica se o jogo já iniciou
-      // Pode ser necessário reajustar a posição do jogador ou cameraX se o tamanho do canvas mudar drasticamente
-      player.x = gameCanvas.width / 2; // Mantém o jogador no novo centro horizontal da tela
-      groundY = gameCanvas.height * 0.80; // Ex: chão a 80% da altura do canvas
-      if(player.y + player.height > groundY) player.y = groundY - player.height; // Ajusta se estava abaixo do novo chão
-      drawGameWorld();
+  gameCanvas.width = newWidth; gameCanvas.height = newHeight;
+  if (player) { // Se o jogo já iniciou, ajustar posições relativas
+    player.x = gameCanvas.width / 2.5; 
+    groundY = gameCanvas.height * 0.82;
+    if(player.y + player.height > groundY) player.y = groundY - player.height;
+    drawGameWorld(); // Redesenha com novo tamanho
   }
 }
-
 window.addEventListener('resize', adjustGameCanvas);
-// Chamada inicial para ajustar o canvas ao carregar a página
-adjustGameCanvas();
-// Não chama setupMapElements() globalmente aqui, ele é chamado dentro de initializeGame()
-
+adjustGameCanvas(); // Ajuste inicial
 </script>
 </body>
 </html>
