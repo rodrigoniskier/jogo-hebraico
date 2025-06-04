@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Revisado)</title>
+  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Ajustado)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
@@ -18,33 +18,17 @@
     .char-choice.selected { transform: scale(1.13); border: 3px solid #2563eb; box-shadow: 0 0 0 4px #2563eb55; z-index: 2; }
     .lives-heart { color: #ff4141; font-size: 2rem; margin-right: 0.3em; }
     
-    /* Ajuste para o Quadro de Comandos */
-    #commandScreen > div.bg-white { /* Alvo o div branco interno */
-        width: 90vw; /* Mais largo */
-        max-width: 650px; /* Limite máximo de largura */
-        height: auto; /* Altura automática baseada no conteúdo */
-        max-height: 90vh; /* Limite de altura para evitar ultrapassar a tela */
-        overflow-y: auto; /* Adiciona scroll se o conteúdo ainda for muito alto */
-        padding: 1.5rem; /* Padding ajustado */
-        gap: 0.8rem; /* Espaçamento interno ajustado */
+    #commandScreen > div.bg-white {
+        width: 90vw; max-width: 650px; height: auto; max-height: 90vh;
+        overflow-y: auto; padding: 1.5rem; gap: 0.8rem;
     }
-    #commandScreen > div.bg-white > ul { /* Alvo a lista de comandos */
-        margin-bottom: 0.8rem; /* Margem inferior ajustada */
-        line-height: 1.6; /* Espaçamento entre linhas ajustado */
-    }
-     #commandScreen > div.bg-white > h2 {
-        margin-bottom: 0.5rem;
-     }
+    #commandScreen > div.bg-white > ul { margin-bottom: 0.8rem; line-height: 1.6; }
+    #commandScreen > div.bg-white > h2 { margin-bottom: 0.5rem; }
 
     @media (max-width: 600px) { 
         #gameCanvas { margin-top: 10px !important; } 
-        #commandScreen > div.bg-white {
-            padding: 1rem;
-            gap: 0.5rem;
-        }
-        #commandScreen > div.bg-white > ul {
-             font-size: 0.875rem; /* Reduzir um pouco a fonte em telas menores */
-        }
+        #commandScreen > div.bg-white { padding: 1rem; gap: 0.5rem; }
+        #commandScreen > div.bg-white > ul { font-size: 0.875rem; }
     }
   </style>
 </head>
@@ -73,7 +57,7 @@
   </div>
 
   <div id="commandScreen" class="fixed inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-2xl shadow-2xl text-gray-900"> {/* Removido w-[] e p-[], gap-[] para CSS controlar */}
+    <div class="bg-white rounded-2xl shadow-2xl text-gray-900">
       <h2 class="text-2xl font-bold text-blue-800">Comandos do Jogo</h2>
       <ul class="text-base text-left leading-7">
         <li><b>Movimentar:</b> <span class="bg-gray-200 rounded px-1">←</span> <span class="bg-gray-200 rounded px-1">→</span> (ou botões laterais)</li>
@@ -81,8 +65,8 @@
         <li><b>Atirar Cruz:</b> <span class="bg-gray-200 rounded px-1">barra de espaço</span> (ou botão com cruz ✝️)</li>
         <li><b>Coletar palavra:</b> encoste nela</li>
         <li><b>Derrote Fariseus:</b> atire a cruz neles</li>
-        <li><b>Power-up:</b> pegue יָד ("yad") para ganhar poder (100 pontos e brilho especial)</li>
-        <li><b>Vidas:</b> você tem 3 corações (perde vida se ficar com pontos negativos após colidir com Fariseu)</li>
+        <li><b>Power-up:</b> pegue יָד ("yad") para ganhar poder (brilho especial)</li>
+        <li><b>Vidas:</b> você tem 3 corações (perde ao colidir com Fariseu)</li>
         <li><b>Game Over:</b> se perder todas as vidas</li>
         <li><b>Vitória:</b> colete todas as palavras e derrote todos os Fariseus</li>
       </ul>
@@ -98,164 +82,41 @@
   <canvas id="gameCanvas" width="900" height="440" class="rounded-2xl border-2 border-gray-800 shadow-2xl mt-10" style="display:none;"></canvas>
 
   <div id="touchControls" class="fixed left-0 bottom-0 w-full flex justify-between items-end px-6 pb-5 z-30" style="display:none;">
-    <div class="flex gap-3">
-      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnLeft" tabindex="-1">←</button>
-      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnRight" tabindex="-1">→</button>
-    </div>
-    <div class="flex gap-3">
-      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnUp" tabindex="-1">↑</button>
-      <button class="bg-yellow-500 text-white rounded-full w-16 h-16 text-2xl flex items-center justify-center active:bg-yellow-600" id="btnFire" tabindex="-1">✝️</button>
-    </div>
+    <div class="flex gap-3"> <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnLeft" tabindex="-1">←</button> <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnRight" tabindex="-1">→</button> </div> <div class="flex gap-3"> <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnUp" tabindex="-1">↑</button> <button class="bg-yellow-500 text-white rounded-full w-16 h-16 text-2xl flex items-center justify-center active:bg-yellow-600" id="btnFire" tabindex="-1">✝️</button> </div>
   </div>
 
   <div id="challengeModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-    <div class="modal-bg absolute inset-0"></div>
-    <div class="relative p-8 bg-gray-100 rounded-xl shadow-2xl w-[350px] slide-in">
-      <div class="flex flex-col items-center gap-4">
-        <span class="text-lg text-gray-900 font-semibold">Traduza a palavra:</span>
-        <span id="hebrewWordEl" class="hebrew text-4xl text-gray-900"></span>
-        <form id="answerForm" class="w-full flex flex-col gap-3 items-center">
-          <input type="text" id="answerInputEl" autocomplete="off" placeholder="Digite a tradução..." class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800">
-          <div class="flex flex-row gap-4 w-full justify-between items-center">
-            <button type="button" id="hintBtn" class="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg transition">Dica</button>
-            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Responder</button>
-          </div>
-        </form>
-        <div id="feedbackEl" class="text-base text-red-600 font-semibold mt-2 min-h-[28px]"></div>
-        <div id="hintEl" class="text-gray-800 text-sm font-medium"></div>
-        <div id="timerEl" class="text-gray-700 text-xs mt-1"></div>
-      </div>
-    </div>
+    <div class="modal-bg absolute inset-0"></div> <div class="relative p-8 bg-gray-100 rounded-xl shadow-2xl w-[350px] slide-in"> <div class="flex flex-col items-center gap-4"> <span class="text-lg text-gray-900 font-semibold">Traduza a palavra:</span> <span id="hebrewWordEl" class="hebrew text-4xl text-gray-900"></span> <form id="answerForm" class="w-full flex flex-col gap-3 items-center"> <input type="text" id="answerInputEl" autocomplete="off" placeholder="Digite a tradução..." class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800"> <div class="flex flex-row gap-4 w-full justify-between items-center"> <button type="button" id="hintBtn" class="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg transition">Dica</button> <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Responder</button> </div> </form> <div id="feedbackEl" class="text-base text-red-600 font-semibold mt-2 min-h-[28px]"></div> <div id="hintEl" class="text-gray-800 text-sm font-medium"></div> <div id="timerEl" class="text-gray-700 text-xs mt-1"></div> </div> </div>
   </div>
 
   <div id="endModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-    <div class="modal-bg absolute inset-0"></div>
-    <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center">
-      <h2 id="endTitleEl" class="text-2xl text-blue-800 font-bold mb-4"></h2>
-      <p id="endMsgEl" class="mb-2 text-lg"></p>
-      <button onclick="window.location.reload()" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button>
-    </div>
+    <div class="modal-bg absolute inset-0"></div> <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center"> <h2 id="endTitleEl" class="text-2xl text-blue-800 font-bold mb-4"></h2> <p id="endMsgEl" class="mb-2 text-lg"></p> <button onclick="window.location.reload()" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button> </div>
   </div>
 
 <script>
-// ======== Cache de Elementos DOM ========
-const startScreen = document.getElementById('startScreen');
-const usernameInput = document.getElementById('usernameInput');
-const char1Btn = document.getElementById('char1Btn');
-const char2Btn = document.getElementById('char2Btn');
-const playBtn = document.getElementById('playBtn');
-const commandScreen = document.getElementById('commandScreen');
-const okBtn = document.getElementById('okBtn');
-const scoreHud = document.getElementById('scoreHud');
-const scoreValueEl = document.getElementById('scoreValueEl');
-const livesEl = document.getElementById('livesEl');
-const gameCanvas = document.getElementById('gameCanvas');
-const touchControls = document.getElementById('touchControls');
-const challengeModal = document.getElementById('challengeModal');
-const hebrewWordEl = document.getElementById('hebrewWordEl');
-const answerForm = document.getElementById('answerForm');
-const answerInputEl = document.getElementById('answerInputEl');
-const hintBtn = document.getElementById('hintBtn');
-const feedbackEl = document.getElementById('feedbackEl');
-const hintEl = document.getElementById('hintEl');
-const timerEl = document.getElementById('timerEl');
-const endModal = document.getElementById('endModal');
-const endTitleEl = document.getElementById('endTitleEl');
-const endMsgEl = document.getElementById('endMsgEl');
-
+// ======== Cache de Elementos DOM (Mantido) ========
+const startScreen = document.getElementById('startScreen'); const usernameInput = document.getElementById('usernameInput'); const char1Btn = document.getElementById('char1Btn'); const char2Btn = document.getElementById('char2Btn'); const playBtn = document.getElementById('playBtn'); const commandScreen = document.getElementById('commandScreen'); const okBtn = document.getElementById('okBtn'); const scoreHud = document.getElementById('scoreHud'); const scoreValueEl = document.getElementById('scoreValueEl'); const livesEl = document.getElementById('livesEl'); const gameCanvas = document.getElementById('gameCanvas'); const touchControls = document.getElementById('touchControls'); const challengeModal = document.getElementById('challengeModal'); const hebrewWordEl = document.getElementById('hebrewWordEl'); const answerForm = document.getElementById('answerForm'); const answerInputEl = document.getElementById('answerInputEl'); const hintBtn = document.getElementById('hintBtn'); const feedbackEl = document.getElementById('feedbackEl'); const hintEl = document.getElementById('hintEl'); const timerEl = document.getElementById('timerEl'); const endModal = document.getElementById('endModal'); const endTitleEl = document.getElementById('endTitleEl'); const endMsgEl = document.getElementById('endMsgEl');
 const ctx = gameCanvas.getContext("2d");
 
-// ======== Utils ========
-function isMobileDevice() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-function normalize(str) {
-  return str
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9ãõçáéíóúàèìòùâêîôûäëïöü\s]/gi, '') // Mantém mais caracteres acentuados e ç
-    .trim();
-}
+// ======== Utils (Mantido) ========
+function isMobileDevice() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); }
+function normalize(str) { return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ãõçáéíóúàèìòùâêîôûäëïöü\s]/gi, '').trim(); }
 
-// ======== Configurações e Estado do Jogo ========
-let selectedChar = 0;
-let playerName = "";
-let usedHint = false;
-const charOptionBtns = [char1Btn, char2Btn];
+// ======== Configurações e Estado do Jogo (Mantido) ========
+let selectedChar = 0; let playerName = ""; let usedHint = false; const charOptionBtns = [char1Btn, char2Btn];
+const charImgsPaths = ["personagem1.png", "personagem2.png", "personagem3.png"];
+const backgroundImageUrl = "fundo.jpg"; const WORDS_DATA = [ {he:"בֵּן", tr:"ben", pt:["filho","menino","descendente"], dica:"Parentesco masculino"}, {he:"בָּנִים", tr:"banim", pt:["filhos","meninos","descendentes"], dica:"Plural de filho"}, {he:"אִשָּׁה", tr:"ishá", pt:["mulher","esposa"], dica:"Feminino de homem"}, {he:"אִישׁ", tr:"ish", pt:["homem","marido"], dica:"Masculino adulto"}, {he:"נָבִיא", tr:"navi", pt:["profeta"], dica:"Homem que fala por Deus"}, {he:"מֶלֶךְ", tr:"melekh", pt:["rei"], dica:"Soberano do povo"}, {he:"מַלְכָּה", tr:"malká", pt:["rainha"], dica:"Soberana do povo"}, {he:"אֵם", tr:"em", pt:["mãe"], dica:"Progenitora feminina"}, {he:"אָב", tr:"av", pt:["pai","ancestral"], dica:"Progenitor masculino"}, {he:"תַּלְמִיד", tr:"talmid", pt:["discípulo","aluno"], dica:"Segue o mestre"}, {he:"אָמַר", tr:"amar", pt:["disse","falar","falou","dizer"], dica:"Expressar palavras"}, {he:"הָלַךְ", tr:"halakh", pt:["andou","andar","caminhou","caminhar"], dica:"Locomoção"}, {he:"אָמְרוּ", tr:"amru", pt:["disseram","falaram"], dica:"Plural de disse"}, {he:"שָׁמַע", tr:"shama", pt:["ouviu","ouvir"], dica:"Sentido de escutar"}, {he:"יָשַׁב", tr:"yashav", pt:["sentou","assentar","habitou","morar","residir"], dica:"Ficar em um lugar"}, {he:"אָכַל", tr:"akal", pt:["comeu","comer"], dica:"Ato de comer"}, {he:"לָקַח", tr:"lakach", pt:["pegou","tomou","pegar","tomar"], dica:"Ato de tomar algo"}, {he:"רָאָה", tr:"ra'ah", pt:["viu","ver"], dica:"Perceber com os olhos"}, {he:"אֵת", tr:"et", pt:["com","junto de","com o"], dica:"Preposição - junto de"}, {he:"בְּתוֹךְ", tr:"betoch", pt:["dentro","em meio a"], dica:"No interior de algo"}, {he:"עִם", tr:"im", pt:["com"], dica:"Junto de"}, {he:"עַל", tr:"al", pt:["sobre","em cima de","acima"], dica:"Em cima"}, {he:"אֶל", tr:"el", pt:["para","até"], dica:"Direção, movimento"}, {he:"לִפְנֵי", tr:"lifnei", pt:["antes de","diante de"], dica:"Antes no tempo ou espaço"}, {he:"דָּבָר", tr:"davar", pt:["palavra","coisa","assunto"], dica:"O que se diz"}, {he:"עִיר", tr:"ir", pt:["cidade"], dica:"Lugar urbano"}, {he:"שָׁלוֹם", tr:"shalom", pt:["paz","bem-estar","segurança"], dica:"Desejo de paz"}, {he:"שָׁנָה", tr:"shanah", pt:["ano"], dica:"Tempo de 12 meses"}, {he:"מַיִם", tr:"mayim", pt:["água","águas"], dica:"Líquido essencial"}, {he:"עֵין", tr:"ayin", pt:["olho","vista"], dica:"Sentido da visão"}, {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true} ];
+let gameElementsOnMap = []; let player, cameraX, worldLength, groundY, currentChallengeWordMapIndex, challengeActive, challengeStartTime, points, wordsFoundCorrectly, viloesDefeated, keys, loadedCharImages, vidas, playerGlowEffect, projectiles, isGameOver, gameOutcomeType, wordsToWin, viloesToWin;
+let challengeTimerInterval = null; const CHALLENGE_TIMEOUT_SECONDS = 16; const bgGameImage = new Image(); bgGameImage.src = backgroundImageUrl;
 
-const charImgsPaths = [
-  "personagem1.png", // Jogador 1
-  "personagem2.png", // Jogador 2
-  "personagem3.png"  // Fariseu (Vilão)
-];
-const backgroundImageUrl = "fundo.jpg";
-const WORDS_DATA = [
-  {he:"בֵּן", tr:"ben", pt:["filho","menino","descendente"], dica:"Parentesco masculino"},
-  {he:"בָּנִים", tr:"banim", pt:["filhos","meninos","descendentes"], dica:"Plural de filho"},
-  {he:"אִשָּׁה", tr:"ishá", pt:["mulher","esposa"], dica:"Feminino de homem"},
-  {he:"אִישׁ", tr:"ish", pt:["homem","marido"], dica:"Masculino adulto"},
-  {he:"נָבִיא", tr:"navi", pt:["profeta"], dica:"Homem que fala por Deus"},
-  {he:"מֶלֶךְ", tr:"melekh", pt:["rei"], dica:"Soberano do povo"},
-  {he:"מַלְכָּה", tr:"malká", pt:["rainha"], dica:"Soberana do povo"},
-  {he:"אֵם", tr:"em", pt:["mãe"], dica:"Progenitora feminina"},
-  {he:"אָב", tr:"av", pt:["pai","ancestral"], dica:"Progenitor masculino"},
-  {he:"תַּלְמִיד", tr:"talmid", pt:["discípulo","aluno"], dica:"Segue o mestre"},
-  {he:"אָמַר", tr:"amar", pt:["disse","falar","falou","dizer"], dica:"Expressar palavras"},
-  {he:"הָלַךְ", tr:"halakh", pt:["andou","andar","caminhou","caminhar"], dica:"Locomoção"},
-  {he:"אָמְרוּ", tr:"amru", pt:["disseram","falaram"], dica:"Plural de disse"},
-  {he:"שָׁמַע", tr:"shama", pt:["ouviu","ouvir"], dica:"Sentido de escutar"},
-  {he:"יָשַׁב", tr:"yashav", pt:["sentou","assentar","habitou","morar","residir"], dica:"Ficar em um lugar"},
-  {he:"אָכַל", tr:"akal", pt:["comeu","comer"], dica:"Ato de comer"},
-  {he:"לָקַח", tr:"lakach", pt:["pegou","tomou","pegar","tomar"], dica:"Ato de tomar algo"},
-  {he:"רָאָה", tr:"ra'ah", pt:["viu","ver"], dica:"Perceber com os olhos"},
-  {he:"אֵת", tr:"et", pt:["com","junto de","com o"], dica:"Preposição - junto de"},
-  {he:"בְּתוֹךְ", tr:"betoch", pt:["dentro","em meio a"], dica:"No interior de algo"},
-  {he:"עִם", tr:"im", pt:["com"], dica:"Junto de"},
-  {he:"עַל", tr:"al", pt:["sobre","em cima de","acima"], dica:"Em cima"},
-  {he:"אֶל", tr:"el", pt:["para","até"], dica:"Direção, movimento"},
-  {he:"לִפְנֵי", tr:"lifnei", pt:["antes de","diante de"], dica:"Antes no tempo ou espaço"},
-  {he:"דָּבָר", tr:"davar", pt:["palavra","coisa","assunto"], dica:"O que se diz"},
-  {he:"עִיר", tr:"ir", pt:["cidade"], dica:"Lugar urbano"},
-  {he:"שָׁלוֹם", tr:"shalom", pt:["paz","bem-estar","segurança"], dica:"Desejo de paz"},
-  {he:"שָׁנָה", tr:"shanah", pt:["ano"], dica:"Tempo de 12 meses"},
-  {he:"מַיִם", tr:"mayim", pt:["água","águas"], dica:"Líquido essencial"},
-  {he:"עֵין", tr:"ayin", pt:["olho","vista"], dica:"Sentido da visão"},
-  {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true} // Power-up "יָד"
-];
-
-let gameElementsOnMap = [];
-let player, cameraX, worldLength, groundY, currentChallengeWordMapIndex, challengeActive, challengeStartTime,
-  points, wordsFoundCorrectly, viloesDefeated, keys, loadedCharImages, vidas, playerGlowEffect, projectiles,
-  isGameOver, gameOutcomeType, wordsToWin, viloesToWin;
-
-let challengeTimerInterval = null;
-const CHALLENGE_TIMEOUT_SECONDS = 16;
-const bgGameImage = new Image();
-bgGameImage.src = backgroundImageUrl;
-
-// ======== Lógica da Tela Inicial e Comandos ========
-function updatePlayButtonState() {
-  playBtn.disabled = !(playerName.length > 0 && selectedChar > 0);
-}
-charOptionBtns.forEach((btn, idx) => {
-  btn.addEventListener('click', () => {
-    selectedChar = idx + 1;
-    charOptionBtns.forEach((b, j) => b.classList.toggle('selected', j === idx));
-    updatePlayButtonState();
-  });
-});
+// ======== Lógica da Tela Inicial e Comandos (Mantida) ========
+function updatePlayButtonState() { playBtn.disabled = !(playerName.length > 0 && selectedChar > 0); }
+charOptionBtns.forEach((btn, idx) => { btn.addEventListener('click', () => { selectedChar = idx + 1; charOptionBtns.forEach((b, j) => b.classList.toggle('selected', j === idx)); updatePlayButtonState(); }); });
 usernameInput.addEventListener('input', function() { playerName = this.value.trim(); updatePlayButtonState(); });
 playBtn.addEventListener('click', () => { startScreen.style.display = "none"; commandScreen.style.display = "flex"; });
-okBtn.addEventListener('click', () => {
-  commandScreen.style.display = "none";
-  gameCanvas.style.display = "block";
-  scoreHud.style.display = "flex";
-  touchControls.style.display = isMobileDevice() ? "flex" : "none";
-  initializeGame();
-});
+okBtn.addEventListener('click', () => { commandScreen.style.display = "none"; gameCanvas.style.display = "block"; scoreHud.style.display = "flex"; touchControls.style.display = isMobileDevice() ? "flex" : "none"; initializeGame(); });
 
-// ======== Configuração do Jogo e Elementos do Mapa ========
+// ======== Configuração do Jogo e Elementos do Mapa (Ajustada para Novas Regras) ========
 function setupMapElements() {
     gameElementsOnMap = [];
     wordsToWin = 0;
@@ -265,103 +126,97 @@ function setupMapElements() {
     const yadWordEntry = WORDS_DATA.find(w => w.power);
     const yadWordDataIndex = yadWordEntry ? WORDS_DATA.indexOf(yadWordEntry) : -1;
 
-    let normalWordsPlacedThisCycle = 0; // Contador para regras de YAD e Vilão
-    let totalNormalWordsEverPlaced = 0; // Contador geral de palavras normais
+    let normalWordsPlacedInCycle = 0; // Contador para regras de YAD e Vilão dentro do ciclo atual
+    let totalNormalWordsEverPlaced = 0; 
     
-    const MIN_NORMAL_WORDS_TARGET = 30; // Alvo para palavras normais
+    const MIN_NORMAL_WORDS_TARGET = 30; 
     let currentNormalWordPoolIndex = 0;
 
-    // Loop para construir a sequência de elementos
-    while (currentNormalWordPoolIndex < MIN_NORMAL_WORDS_TARGET || gameElementsOnMap.length < MIN_NORMAL_WORDS_TARGET + 5) { // Garante um mínimo de elementos
-        let elementAddedThisIteration = false;
+    let isFirstYadPlaced = false;
+    let isFirstVilaoPlaced = false;
 
-        // Lógica para YAD
+    while (currentNormalWordPoolIndex < MIN_NORMAL_WORDS_TARGET || gameElementsOnMap.length < MIN_NORMAL_WORDS_TARGET + 5) {
+        let elementPushedThisTurn = false;
+
+        // Lógica para YAD (Power-up)
         if (yadWordDataIndex !== -1) {
-            // Primeira YAD: depois da 3ª palavra normal (será o 4º item se nenhuma outra regra intervir)
-            if (totalNormalWordsEverPlaced === 3 && normalWordsPlacedThisCycle === 3) { 
+            if (!isFirstYadPlaced && totalNormalWordsEverPlaced === 3) {
                 gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
-                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de YAD (de 7)
-                elementAddedThisIteration = true;
-            } 
-            // YADs subsequentes: a cada 7 palavras normais DEPOIS da primeira YAD
-            else if (totalNormalWordsEverPlaced > 3 && normalWordsPlacedThisCycle >= 7) {
+                isFirstYadPlaced = true;
+                normalWordsPlacedInCycle = 0; // Reseta ciclo para YAD/Vilão
+                elementPushedThisTurn = true;
+            } else if (isFirstYadPlaced && normalWordsPlacedInCycle >= 7) {
                 gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
-                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de YAD
-                elementAddedThisIteration = true;
+                normalWordsPlacedInCycle = 0;
+                elementPushedThisTurn = true;
             }
         }
 
-        // Lógica para VILÃO (Fariseu)
-        if (!elementAddedThisIteration) { // Só adiciona vilão se YAD não foi adicionado
-            // Primeiro VILÃO: depois da 5ª palavra normal
-            if (totalNormalWordsEverPlaced === 5 && normalWordsPlacedThisCycle === 5) { 
+        // Lógica para VILÃO (Fariseu) - só se YAD não foi colocado
+        if (!elementPushedThisTurn) {
+            if (!isFirstVilaoPlaced && totalNormalWordsEverPlaced >= 5) { // >=5 para aparecer *após* a quinta
                 gameElementsOnMap.push({ type: "vilao" });
                 viloesToWin++;
-                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de Vilão (de 5)
-                elementAddedThisIteration = true;
-            }
-            // VILÕES subsequentes: a cada 5 palavras normais DEPOIS do primeiro Vilão
-            else if (totalNormalWordsEverPlaced > 5 && normalWordsPlacedThisCycle >= 5) {
+                isFirstVilaoPlaced = true;
+                normalWordsPlacedInCycle = 0; // Reseta ciclo para YAD/Vilão
+                elementPushedThisTurn = true;
+            } else if (isFirstVilaoPlaced && normalWordsPlacedInCycle >= 5) {
                 gameElementsOnMap.push({ type: "vilao" });
                 viloesToWin++;
-                normalWordsPlacedThisCycle = 0; // Reseta para o próximo ciclo de Vilão
-                elementAddedThisIteration = true;
+                normalWordsPlacedInCycle = 0;
+                elementPushedThisTurn = true;
             }
         }
         
-        // Adiciona PALAVRA NORMAL se nada mais foi adicionado e ainda há palavras no pool
-        if (!elementAddedThisIteration && currentNormalWordPoolIndex < normalWordsPool.length) {
+        // Adiciona PALAVRA NORMAL se nada mais foi adicionado e ainda há palavras
+        if (!elementPushedThisTurn && currentNormalWordPoolIndex < normalWordsPool.length) {
             const wordData = normalWordsPool[currentNormalWordPoolIndex];
             const globalIdx = WORDS_DATA.indexOf(wordData);
             gameElementsOnMap.push({ type: "word", wordDataIndex: globalIdx, wordObj: wordData });
             
             wordsToWin++;
-            normalWordsPlacedThisCycle++;
+            normalWordsPlacedInCycle++;
             totalNormalWordsEverPlaced++;
             currentNormalWordPoolIndex++;
-            elementAddedThisIteration = true;
+            elementPushedThisTurn = true;
         }
         
-        // Se não adicionou nada e o pool de palavras acabou, sai do loop
-        if (!elementAddedThisIteration && currentNormalWordPoolIndex >= normalWordsPool.length) {
-            break;
+        if (!elementPushedThisTurn && currentNormalWordPoolIndex >= normalWordsPool.length) {
+             // Se acabou o pool de palavras normais e não há mais itens de regra para colocar
+            if (isFirstYadPlaced && normalWordsPlacedInCycle < 7 && yadWordDataIndex !== -1 && gameElementsOnMap.filter(el=>el.type==="power").length < 5) { // Tenta colocar um último YAD se faltar pouco
+                 // Não força, apenas para o loop não ficar vazio se o pool acabar
+            } else if (isFirstVilaoPlaced && normalWordsPlacedInCycle < 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length < 7) {
+                 // Idem para vilão
+            } else {
+                break; // Sai do loop se não há mais o que fazer
+            }
         }
     }
-    // Se não houver vilões adicionados e o jogo já passou do ponto inicial, adiciona um para garantir
-    if (viloesToWin === 0 && totalNormalWordsEverPlaced > 5) {
+     // Garante que haja pelo menos um vilão se a condição for atingida mas o loop parou cedo
+    if (viloesToWin === 0 && totalNormalWordsEverPlaced >= 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length === 0) {
         gameElementsOnMap.push({ type: "vilao" });
         viloesToWin++;
     }
 }
 
-
-// ======== Inicialização do Jogo ========
+// ======== Inicialização do Jogo (Mantida e ajustada) ========
 function initializeGame() {
   player = {
-    x: gameCanvas.width / 2.5, // Um pouco mais à esquerda do centro
-    y: 300,
-    width: 38, height: 70, // Tamanho ajustado para novo desenho
-    vx: 0, vy: 0, speed: 4.5, onGround: true,
-    gravity: 0.6, jumpPower: -11.5, direction: 1,
-    worldX: gameCanvas.width / 2.5
+    x: gameCanvas.width / 2.5, y: 300, width: 38, height: 70,
+    vx: 0, vy: 0, speed: 4.5, onGround: true, gravity: 0.6, jumpPower: -11.5, direction: 1,
+    worldX: gameCanvas.width / 2.5,
+    isHit: false, hitShakeDuration: 0 // Para efeito de tremor
   };
-  cameraX = 0;
-  groundY = gameCanvas.height * 0.82; // Chão um pouco mais alto
-  
-  setupMapElements();
-  positionGameElements(); // Posiciona os elementos baseados no setupMapElements
-
-  currentChallengeWordMapIndex = -1;
-  challengeActive = false; challengeStartTime = 0;
+  cameraX = 0; groundY = gameCanvas.height * 0.82;
+  setupMapElements(); positionGameElements();
+  currentChallengeWordMapIndex = -1; challengeActive = false; challengeStartTime = 0;
   points = 200; wordsFoundCorrectly = 0; viloesDefeated = 0;
   keys = {}; vidas = 3; playerGlowEffect = 0; projectiles = [];
   isGameOver = false; gameOutcomeType = "";
-
   updateLivesDisplay(); updatePointsDisplay();
   loadCharacterImages().then(() => { drawGameWorld(); gameLoop(); });
 }
-
-function loadCharacterImages() {
+function loadCharacterImages() { /* ... (código mantido) ... */ 
   return new Promise(resolve => {
     loadedCharImages = []; let imagesToLoad = charImgsPaths.length;
     if (imagesToLoad === 0) { resolve(); return; }
@@ -373,48 +228,29 @@ function loadCharacterImages() {
     });
   });
 }
-
-function positionGameElements() {
-  let currentMapX = 400; // Posição X inicial para o primeiro elemento
-  const vilaoHeight = player.height * 0.95; // Altura do vilão similar ao jogador
-
+function positionGameElements() { /* ... (código mantido, vilão já posicionado no chão) ... */ 
+  let currentMapX = 400; 
+  const vilaoHeight = player.height * 0.95; 
   gameElementsOnMap.forEach(element => {
-    element.x = currentMapX;
-    element.found = false; 
-    element.collidedThisFrame = false;
-
+    element.x = currentMapX; element.found = false; element.collidedThisFrame = false;
     if (element.type === "vilao") {
-      element.y = groundY - vilaoHeight; // Vilão no chão
-      element.height = vilaoHeight;
-      element.width = player.width * 0.9;
-      element.alive = true;
-      element.cooldown = 0;
+      element.y = groundY - vilaoHeight; element.height = vilaoHeight; element.width = player.width * 0.9;
+      element.alive = true; element.cooldown = 0;
+      element.isAscending = false; element.ascendSpeedY = -2.5; element.currentAlpha = 1.0; // Para animação de subida
     } else if (element.type === "word" || element.type === "power") {
-      const minY = groundY * 0.6; // Palavras podem flutuar mais alto
-      const maxY = groundY - 60; 
+      const minY = groundY * 0.55; const maxY = groundY - 70; 
       element.y = minY + Math.random() * (maxY - minY);
-      element.height = 54; // Altura da hitbox da palavra
-      element.width = 100; // Largura da hitbox da palavra
+      element.height = 54; element.width = 100; 
     }
-    currentMapX += 150 + Math.random() * 80; // Espaçamento entre elementos
+    currentMapX += 160 + Math.random() * 90; // Espaçamento aumentado
   });
-  worldLength = currentMapX + gameCanvas.width; // Garante espaço no final
+  worldLength = currentMapX + gameCanvas.width; 
 }
 
 // ======== Funções de Desenho no Canvas ========
-function drawGameBackground() {
+function drawGameBackground() { // Fundo Fixo e Estendido
   if (bgGameImage.complete && bgGameImage.naturalWidth > 0) {
-    const bgAspect = bgGameImage.naturalWidth / bgGameImage.naturalHeight;
-    const bgHeight = gameCanvas.height;
-    const bgWidth = bgHeight * bgAspect;
-    const numRepeats = Math.ceil(gameCanvas.width / bgWidth) + 2; // Para cobrir a tela com parallax
-    
-    for (let i = 0; i < numRepeats; i++) {
-        let bgX = (i * bgWidth) - (cameraX * 0.2 % bgWidth) ; // Parallax mais lento
-        // Se a imagem sair completamente para a esquerda, reposiciona para a direita
-        if (bgX + bgWidth < 0) bgX += numRepeats * bgWidth; 
-        ctx.drawImage(bgGameImage, bgX, 0, bgWidth, bgHeight);
-    }
+    ctx.drawImage(bgGameImage, 0, 0, gameCanvas.width, gameCanvas.height); // Estica para preencher
   } else {
     ctx.fillStyle = "#7dd3fc"; ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
   }
@@ -422,312 +258,217 @@ function drawGameBackground() {
 
 function drawPlayerCharacter() {
   ctx.save();
-  const playerScreenX = player.x; 
-  const playerScreenY = player.y + player.height / 2; 
+  let playerRenderX = player.x;
+  let playerRenderY = player.y;
+
+  if (player.isHit && player.hitShakeDuration > 0) {
+    playerRenderX += (Math.random() - 0.5) * 8; // Amplitude do tremor
+    playerRenderY += (Math.random() - 0.5) * 6;
+  }
   
-  ctx.translate(playerScreenX, playerScreenY);
+  const playerScreenY = playerRenderY + player.height / 2; 
+  ctx.translate(playerRenderX, playerScreenY);
   ctx.scale(player.direction, 1);
 
-  if (playerGlowEffect > 0) { /* ... (código do brilho mantido) ... */ }
+  if (playerGlowEffect > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, 0.3 + (playerGlowEffect / 180) * 0.7); // Brilho mais sutil e diminui
+    const baseRadius = player.width * 0.8;
+    for (let i = 0; i < 8; i++) { // Menos arcos, mais performático
+      ctx.beginPath();
+      const angle = (i / 8) * (Math.PI * 2) + (Date.now() * 0.002); // Animação suave
+      const radius = baseRadius + 5 * Math.sin(angle * 2);
+      ctx.arc(0, 0, radius, 0, 2 * Math.PI); // Centralizado no jogador
+      ctx.strokeStyle = `rgba(255, 223, 100, ${0.4 + Math.random()*0.2})`;
+      ctx.lineWidth = 3 + Math.random() * 3;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
-  // Desenho do personagem (Restaurado e ajustado do original)
-  const pWidth = player.width;
-  const pHeight = player.height;
-
-  // Pernas (Calça escura)
-  ctx.fillStyle = "#191d25";
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 1.5;
-  // Perna Esquerda (do ponto de vista do jogador)
+  // Desenho do personagem (Mantido e verificado para cor da manga)
+  const pWidth = player.width; const pHeight = player.height;
+  ctx.fillStyle = "#191d25"; ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5;
   ctx.fillRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35); 
   ctx.strokeRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35);
-  // Perna Direita
   ctx.fillRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
   ctx.strokeRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35);
-  // Sapatos (Pretos)
   ctx.fillStyle = "#111";
-  ctx.fillRect(-pWidth*0.35, pHeight*0.45, pWidth*0.3, pWidth*0.15); // Sapato Esquerdo
-  ctx.fillRect(pWidth*0.05, pHeight*0.45, pWidth*0.3, pWidth*0.15); // Sapato Direita
+  ctx.fillRect(-pWidth*0.35, pHeight*0.45, pWidth*0.3, pWidth*0.15); 
+  ctx.fillRect(pWidth*0.05, pHeight*0.45, pWidth*0.3, pWidth*0.15); 
 
-  // Tronco (Paletó azul escuro)
-  ctx.fillStyle = "#273262";
-  ctx.strokeStyle = "#182042";
-  ctx.beginPath();
-  ctx.moveTo(-pWidth*0.4, -pHeight*0.3); // Ombro esquerdo
-  ctx.lineTo(pWidth*0.4, -pHeight*0.3);  // Ombro direito
-  ctx.lineTo(pWidth*0.3, pHeight*0.2);   // Lateral direita baixo
-  ctx.lineTo(-pWidth*0.3, pHeight*0.2);  // Lateral esquerda baixo
-  ctx.closePath();
-  ctx.fill();  ctx.stroke();
-
-  // Camisa Branca (parte visível)
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.moveTo(-pWidth*0.15, -pHeight*0.3);
-  ctx.lineTo(pWidth*0.15, -pHeight*0.3);
-  ctx.lineTo(pWidth*0.15, -pHeight*0.05);
-  ctx.lineTo(-pWidth*0.15, -pHeight*0.05);
-  ctx.closePath();
-  ctx.fill();
-
-  // Gravata Vermelha
-  ctx.fillStyle = "#be2323";
-  ctx.beginPath();
-  ctx.arc(0, -pHeight*0.25, pWidth*0.08, 0, 2 * Math.PI); // Nó
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(0, -pHeight*0.25 + pWidth*0.08);
-  ctx.lineTo(-pWidth*0.1, pHeight*0.05);
-  ctx.lineTo(pWidth*0.1, pHeight*0.05);
-  ctx.closePath();
-  ctx.fill();
+  ctx.fillStyle = "#273262"; ctx.strokeStyle = "#182042"; // Cor do paletó (e mangas)
+  ctx.beginPath(); ctx.moveTo(-pWidth*0.4, -pHeight*0.3); ctx.lineTo(pWidth*0.4, -pHeight*0.3); ctx.lineTo(pWidth*0.3, pHeight*0.2); ctx.lineTo(-pWidth*0.3, pHeight*0.2); ctx.closePath(); ctx.fill();  ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-pWidth*0.15, -pHeight*0.3); ctx.lineTo(pWidth*0.15, -pHeight*0.3); ctx.lineTo(pWidth*0.15, -pHeight*0.05); ctx.lineTo(-pWidth*0.15, -pHeight*0.05); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#be2323"; ctx.beginPath(); ctx.arc(0, -pHeight*0.25, pWidth*0.08, 0, 2 * Math.PI); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, -pHeight*0.25 + pWidth*0.08); ctx.lineTo(-pWidth*0.1, pHeight*0.05); ctx.lineTo(pWidth*0.1, pHeight*0.05); ctx.closePath(); ctx.fill();
   
-  // Braços (cor do paletó)
-  // Braço Esquerdo (do ponto de vista do jogador)
-  ctx.beginPath();
-  ctx.moveTo(-pWidth*0.4, -pHeight*0.25); // Início do ombro
-  ctx.lineTo(-pWidth*0.55, pHeight*0.05); // Cotovelo
-  ctx.lineTo(-pWidth*0.45, pHeight*0.25); // Mão
-  ctx.lineTo(-pWidth*0.3, pHeight*0.15); // Volta para o corpo
-  ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  // Braço Direito
-  ctx.beginPath();
-  ctx.moveTo(pWidth*0.4, -pHeight*0.25);
-  ctx.lineTo(pWidth*0.55, pHeight*0.05);
-  ctx.lineTo(pWidth*0.45, pHeight*0.25);
-  ctx.lineTo(pWidth*0.3, pHeight*0.15);
-  ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  // Mãos (cor de pele)
+  ctx.fillStyle = "#273262"; // Garantindo que braços (mangas) são da cor do paletó
+  ctx.beginPath(); ctx.moveTo(-pWidth*0.4, -pHeight*0.25); ctx.lineTo(-pWidth*0.55, pHeight*0.05); ctx.lineTo(-pWidth*0.45, pHeight*0.25); ctx.lineTo(-pWidth*0.3, pHeight*0.15); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pWidth*0.4, -pHeight*0.25); ctx.lineTo(pWidth*0.55, pHeight*0.05); ctx.lineTo(pWidth*0.45, pHeight*0.25); ctx.lineTo(pWidth*0.3, pHeight*0.15); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle = "#f8e6d4";
-  ctx.beginPath();
-  ctx.arc(-pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); // Mão Esquerda
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); // Mão Direita
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(-pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); ctx.fill();
 
-  // Cabeça com imagem
-  const headRadius = pWidth * 0.35;
-  const headYOffset = -pHeight * 0.35;
-  ctx.beginPath();
-  ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI);
-  ctx.closePath();
-  ctx.save();
-  ctx.clip();
+  const headRadius = pWidth * 0.35; const headYOffset = -pHeight * 0.35;
+  ctx.beginPath(); ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI); ctx.closePath(); ctx.save(); ctx.clip();
   const playerImage = loadedCharImages && loadedCharImages[selectedChar - 1];
-  if (playerImage) {
-    ctx.drawImage(playerImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2);
-  } else {
-    ctx.fillStyle = "#f8e6d4"; ctx.fill();
-  }
-  ctx.restore(); // clip
-  ctx.strokeStyle = "#333"; ctx.lineWidth = 1; ctx.stroke(); // Contorno da cabeça
-
-  ctx.restore(); // translate e scale
+  if (playerImage) { ctx.drawImage(playerImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2); } 
+  else { ctx.fillStyle = "#f8e6d4"; ctx.fill(); }
+  ctx.restore(); ctx.strokeStyle = "#333"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore(); 
 }
 
-function drawGameGround() {
+function drawGameGround() { // Chão sem os "pontos" (pedrinhas)
   ctx.fillStyle = "#222b3e";
   ctx.fillRect(0, groundY, gameCanvas.width, gameCanvas.height - groundY);
   ctx.fillStyle = "#495980";
-  ctx.fillRect(0, groundY + 20, gameCanvas.width, gameCanvas.height - groundY - 20); // Faixa mais clara do chão
+  ctx.fillRect(0, groundY + 20, gameCanvas.width, gameCanvas.height - groundY - 20);
 
-  // Detalhes do chão (pedrinhas)
-  ctx.fillStyle = "rgba(148, 163, 184, 0.7)"; // cinza claro semitransparente
-  for (let i = 0; i < 60; i++) { // Mais detalhes, menores
-      const detailSize = 2 + Math.random() * 4;
-      // Posição X com parallax, garantindo que o ciclo seja maior que a largura da tela
-      const detailX = ((i * (gameCanvas.width/15)) - cameraX * 0.7 + (Math.random() * 50)) % (gameCanvas.width + 200) - 100;
-      const detailY = groundY + 5 + Math.random() * 25; // Variação vertical pequena
-      if (detailX > -detailSize && detailX < gameCanvas.width) {
-        ctx.beginPath();
-        ctx.arc(detailX, detailY, detailSize / 2, 0, Math.PI *2);
-        ctx.fill();
-      }
-  }
-
-  // Nome no chão
   ctx.save();
   ctx.font = "bold 16px 'JetBrains Mono', monospace";
-  ctx.fillStyle = "rgba(200, 200, 220, 0.3)"; // Cor suave
+  ctx.fillStyle = "rgba(200, 200, 220, 0.3)"; 
   ctx.textAlign = "center";
-  const nameYPos = groundY + gameCanvas.height * 0.12; // Mais para baixo, na parte escura do chão
-  
-  // Desenha o nome repetidamente para efeito de scroll infinito no chão
-  const nameWidth = ctx.measureText("Rodrigo Niskier").width + 150; // Largura do texto + espaçamento
+  const nameYPos = groundY + gameCanvas.height * 0.12; 
+  const nameWidth = ctx.measureText("Rodrigo Niskier").width + 150; 
   const numNameRepeats = Math.ceil(gameCanvas.width / nameWidth) + 2;
   for (let i = 0; i < numNameRepeats; i++) {
-      let nameX = (i * nameWidth) - (cameraX * 0.95 % nameWidth); // Parallax rápido, quase junto com o chão
-      if (nameX + nameWidth < 0) nameX += numNameRepeats * nameWidth; // Reposiciona se saiu da tela
-      ctx.fillText("Rodrigo Niskier", nameX + nameWidth/2 - ctx.measureText("Rodrigo Niskier").width/2 , nameYPos); // Centraliza o texto dentro do seu "bloco"
+      let nameX = (i * nameWidth) - (cameraX * 0.95 % nameWidth); 
+      if (nameX + nameWidth < 0) nameX += numNameRepeats * nameWidth; 
+      ctx.fillText("Rodrigo Niskier", nameX + nameWidth/2 - ctx.measureText("Rodrigo Niskier").width/2 , nameYPos);
   }
   ctx.restore();
 }
 
-function drawMapElements() {
+function drawMapElements() { /* ... (adaptado para animação do vilão) ... */ 
   gameElementsOnMap.forEach(element => {
-    if (element.type === "vilao" && !element.alive) return;
-    if ((element.type === "word" || element.type === "power") && element.found) return;
+    if (element.type === "vilao") {
+        if (!element.alive && !element.isAscending) return; // Morto e não subindo = não desenha
+        if (element.isAscending && element.currentAlpha <= 0) return; // Terminou de subir/desvanecer
+    } else if ((element.type === "word" || element.type === "power") && element.found) {
+        return; // Coletado
+    }
 
     const screenX = worldToScreenX(element.x);
     const elementVisualWidth = (element.type === "vilao" ? element.width : 120); 
     if (screenX < -elementVisualWidth || screenX > gameCanvas.width + elementVisualWidth) return;
 
     ctx.save();
+    if (element.isAscending) { // Aplica alpha para vilão subindo
+        ctx.globalAlpha = Math.max(0, element.currentAlpha);
+    }
+
     if (element.type === "word" || element.type === "power") {
-      ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif";
-      ctx.textAlign = "center";
+      ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif"; ctx.textAlign = "center";
       ctx.shadowColor = element.type === "power" ? "#fff352" : "#facc15";
       ctx.shadowBlur = element.type === "power" ? 18 : 9;
-      ctx.globalAlpha = element.type === "power" ? 0.95 : 0.85;
+      // Não definir globalAlpha aqui se já foi setado para ascendente
+      if (!element.isAscending) ctx.globalAlpha = element.type === "power" ? 0.95 : 0.85;
       ctx.fillStyle = element.type === "power" ? "#ffe34d" : "#fbbf24";
-      ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + element.height/2); // Centraliza texto na hitbox
+      ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + element.height/2);
     } else if (element.type === "vilao") {
-      const vilaoScreenY = element.y + element.height / 2;
+      const vilaoScreenY = element.y + element.height / 2; // y é topo do vilão
       ctx.translate(screenX, vilaoScreenY);
       
-      const vWidth = element.width;
-      const vHeight = element.height;
-      const headRadius = vWidth * 0.4;
-      const headYOffset = -vHeight * 0.35;
-
-      // Corpo do Fariseu (exemplo: túnica escura)
-      ctx.fillStyle = "#3a2e2e"; // Marrom escuro
-      ctx.strokeStyle = "#1e1414";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(-vWidth*0.45, -vHeight*0.2); 
-      ctx.lineTo(vWidth*0.45, -vHeight*0.2);  
-      ctx.lineTo(vWidth*0.35, vHeight*0.5);   
-      ctx.lineTo(-vWidth*0.35, vHeight*0.5);  
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-
-      // Faixa (opcional)
-      ctx.fillStyle = "#6b4226"; // Marrom mais claro
-      ctx.fillRect(-vWidth*0.3, -vHeight*0.05, vWidth*0.6, vHeight*0.1);
-
-
-      ctx.beginPath(); // Cabeça do Fariseu
-      ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI);
-      ctx.closePath();
-      ctx.save();
-      ctx.clip();
-      const vilaoImage = loadedCharImages && loadedCharImages[2]; // Imagem do personagem3
-      if (vilaoImage) {
-        ctx.drawImage(vilaoImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2);
-      } else {
-        ctx.fillStyle = "#c5a687"; ctx.fill(); // Cor de pele para fallback
-      }
-      ctx.restore(); // clip
-      ctx.strokeStyle = "#504030"; ctx.lineWidth = 1; ctx.stroke(); // Contorno da cabeça
+      const vWidth = element.width; const vHeight = element.height;
+      const headRadius = vWidth * 0.4; const headYOffset = -vHeight * 0.35;
+      ctx.fillStyle = "#3a2e2e"; ctx.strokeStyle = "#1e1414"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-vWidth*0.45, -vHeight*0.2); ctx.lineTo(vWidth*0.45, -vHeight*0.2);  ctx.lineTo(vWidth*0.35, vHeight*0.5); ctx.lineTo(-vWidth*0.35, vHeight*0.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#6b4226"; ctx.fillRect(-vWidth*0.3, -vHeight*0.05, vWidth*0.6, vHeight*0.1);
+      ctx.beginPath(); ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI); ctx.closePath(); ctx.save(); ctx.clip();
+      const vilaoImage = loadedCharImages && loadedCharImages[2]; 
+      if (vilaoImage) { ctx.drawImage(vilaoImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2); } 
+      else { ctx.fillStyle = "#c5a687"; ctx.fill(); }
+      ctx.restore(); ctx.strokeStyle = "#504030"; ctx.lineWidth = 1; ctx.stroke();
     }
     ctx.restore();
   });
 }
-
-function drawProjectiles() { /* ... (código mantido, talvez ajustar proj.y se player.height mudou) ... */ 
+function drawProjectiles() { /* ... (código mantido) ... */ 
     projectiles.forEach(proj => {
     if (!proj.active) return;
     const screenX = worldToScreenX(proj.x);
-    if (screenX < -20 || screenX > gameCanvas.width + 20) { 
-        proj.active = false; 
-        return;
-    }
+    if (screenX < -20 || screenX > gameCanvas.width + 20) { proj.active = false; return; }
     ctx.save();
-    // Ajustar Y do projétil baseado na nova altura do jogador
-    ctx.translate(screenX, proj.y); // proj.y já considera a altura do jogador ao ser criado
-    ctx.rotate(proj.dir * Date.now() * 0.0015); // Rotação um pouco mais rápida
-    ctx.globalAlpha = 0.95;
-    ctx.lineWidth = 5; // Mais grossa
-    ctx.strokeStyle = "#fff078"; // Amarelo mais claro
-    ctx.shadowColor = "#ffe469";
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.moveTo(-8,0); ctx.lineTo(8,0); 
-    ctx.moveTo(0,-12); ctx.lineTo(0,12); 
-    ctx.stroke();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = "#ffffff";
-    ctx.shadowBlur = 0; // Sem sombra para o detalhe branco
-    ctx.beginPath();
-    ctx.moveTo(-7,0); ctx.lineTo(7,0);
-    ctx.moveTo(0,-11); ctx.lineTo(0,11);
-    ctx.stroke();
+    ctx.translate(screenX, proj.y); 
+    ctx.rotate(proj.dir * Date.now() * 0.0015); 
+    ctx.globalAlpha = 0.95; ctx.lineWidth = 5; 
+    ctx.strokeStyle = "#fff078"; ctx.shadowColor = "#ffe469"; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(0,-12); ctx.lineTo(0,12); ctx.stroke();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = "#ffffff"; ctx.shadowBlur = 0; 
+    ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(7,0); ctx.moveTo(0,-11); ctx.lineTo(0,11); ctx.stroke();
     ctx.restore();
   });
 }
-
-
-function drawGameWorld() {
+function drawGameWorld() { /* ... (código mantido) ... */ 
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-  drawGameBackground();
-  drawGameGround();
-  drawMapElements();
-  drawProjectiles();
-  drawPlayerCharacter();
+  drawGameBackground(); drawGameGround(); drawMapElements(); drawProjectiles(); drawPlayerCharacter();
 }
 
-// ======== Coordenadas e Movimentação do Mundo ========
+// ======== Coordenadas e Movimentação do Mundo (Mantido) ========
 function worldToScreenX(worldXCoord) { return worldXCoord - cameraX; }
 function getPlayerWorldX() { return player.worldX; }
 
 // ======== Lógica de Atualização do Jogo ========
-function updatePlayerState() {
+function updatePlayerState() { /* ... (lógica de movimento mantida) ... */
   player.vx = 0; 
-  let targetPlayerScreenX = gameCanvas.width / 2.5; // Onde o jogador "gosta" de ficar na tela
-
+  let targetPlayerScreenX = gameCanvas.width / 2.5; 
   if (keys["ArrowLeft"])  { player.worldX -= player.speed; player.direction = -1; }
   if (keys["ArrowRight"]) { player.worldX += player.speed; player.direction = 1; }
-  
   player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2));
   cameraX = player.worldX - targetPlayerScreenX;
   cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
-  player.x = player.worldX - cameraX; // Posição real do jogador na tela
-
+  player.x = player.worldX - cameraX; 
   if (keys["ArrowUp"] && player.onGround) { player.vy = player.jumpPower; player.onGround = false; }
-  player.vy += player.gravity;
-  player.y += player.vy;
-
-  if (player.y + player.height >= groundY) {
-    player.y = groundY - player.height;
-    player.vy = 0; player.onGround = true;
-  }
+  player.vy += player.gravity; player.y += player.vy;
+  if (player.y + player.height >= groundY) { player.y = groundY - player.height; player.vy = 0; player.onGround = true; }
   if (player.y < 0) { player.y = 0; player.vy = 0; }
+
+  // Lógica de tremor
+  if (player.isHit && player.hitShakeDuration > 0) {
+      player.hitShakeDuration--;
+  } else if (player.isHit && player.hitShakeDuration <= 0) {
+      player.isHit = false;
+  }
 }
+
+function updateViloesAnimation() { // Nova função para animação de subida
+    gameElementsOnMap.forEach(element => {
+        if (element.type === "vilao" && element.isAscending && element.alive) { // `alive` ainda é true durante a subida
+            element.y += element.ascendSpeedY;
+            element.currentAlpha -= 0.025; // Fade out
+            if (element.currentAlpha <= 0 || element.y < -element.height * 2) { // Se sumiu ou muito alto
+                element.isAscending = false; // Para animação
+                element.alive = false;       // Agora realmente "morto" para não ser processado/desenhado
+            }
+        }
+    });
+}
+
 
 function checkCollisions() {
   if (challengeActive) return;
   gameElementsOnMap.forEach(el => el.collidedThisFrame = false);
 
-  const playerRect = {
-    x: getPlayerWorldX() - player.width / 2, y: player.y,
-    width: player.width, height: player.height
-  };
+  const playerRect = { x: getPlayerWorldX() - player.width / 2, y: player.y, width: player.width, height: player.height };
 
   gameElementsOnMap.forEach((element, mapIndex) => {
     if (element.collidedThisFrame) return;
-    if ((element.type === "vilao" && !element.alive) || ((element.type === "word" || element.type === "power") && element.found)) return;
+    // Só checa colisão com vilões vivos que não estão subindo
+    if (element.type === "vilao" && (!element.alive || element.isAscending)) return;
+    if ((element.type === "word" || element.type === "power") && element.found) return;
 
-    const elRect = {
-        x: element.x - element.width / 2, // Usa a largura do elemento para sua hitbox
-        y: element.y,
-        width: element.width,
-        height: element.height
-    };
-
+    const elRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height };
     if (playerRect.x < elRect.x + elRect.width && playerRect.x + playerRect.width > elRect.x &&
         playerRect.y < elRect.y + elRect.height && playerRect.y + playerRect.height > elRect.y) {
       element.collidedThisFrame = true;
       if (element.type === "power") {
-        points += 100; playerGlowEffect = 120; updatePointsDisplay(); element.found = true;
+        points += 100; playerGlowEffect = 180; updatePointsDisplay(); element.found = true; // Brilho por 3 segundos (180 frames)
       } else if (element.type === "word") {
         currentChallengeWordMapIndex = mapIndex; triggerChallengeModal(element.wordDataIndex);
-      } else if (element.type === "vilao") {
+      } else if (element.type === "vilao") { // Colisão com Fariseu
         if (element.cooldown <= 0) {
           points -= 75; updatePointsDisplay(); element.cooldown = 90; playerGlowEffect = 0;
+          player.isHit = true; player.hitShakeDuration = 15; // Ativa tremor (15 frames = 0.25s)
           if (points < 0 && vidas > 0) { loseLife(); if (vidas > 0) points = 50; }
           else if (vidas === 0 && points < 0) { loseLife(); }
         }
@@ -739,12 +480,15 @@ function checkCollisions() {
   projectiles.forEach(proj => {
     if (!proj.active) return;
     const projRect = { x: proj.x - 7, y: proj.y - 11, width: 14, height: 22 };
-    gameElementsOnMap.forEach(element => { // Checa colisão com vilões
-      if (element.type === "vilao" && element.alive && !element.collidedThisFrameProjectile) {
+    gameElementsOnMap.forEach(element => {
+      if (element.type === "vilao" && element.alive && !element.isAscending && !element.collidedThisFrameProjectile) { // Só atinge vilões vivos e não subindo
         const vilaoRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height };
         if (projRect.x < vilaoRect.x + vilaoRect.width && projRect.x + projRect.width > vilaoRect.x &&
             projRect.y < vilaoRect.y + vilaoRect.height && projRect.y + projRect.height > vilaoRect.y) {
-          element.collidedThisFrameProjectile = true; element.alive = false; proj.active = false;
+          element.collidedThisFrameProjectile = true; 
+          element.isAscending = true; // Inicia animação de subida
+          // element.alive permanece true durante a animação de subida, será false ao final dela
+          proj.active = false; 
           viloesDefeated++; points += 50; updatePointsDisplay(); checkWinCondition();
         }
       }
@@ -753,152 +497,46 @@ function checkCollisions() {
   });
 }
 
-function updatePointsDisplay() { scoreValueEl.textContent = Math.max(0, points); }
-function loseLife() {
-  vidas--; updateLivesDisplay();
-  if (vidas > 0) {
-    player.worldX = Math.max(player.width / 2, player.worldX - 300);
-    player.y = groundY - player.height - 200; player.vy = 0;
-  } else { isGameOver = true; gameOutcomeType = "over"; showEndGameModal(); }
-}
-function updateLivesDisplay() { livesEl.innerHTML = Array(vidas).fill('<span class="lives-heart">♥</span>').join('');}
+function updatePointsDisplay() { /* ... (mantido) ... */ scoreValueEl.textContent = Math.max(0, points); }
+function loseLife() { /* ... (mantido) ... */ vidas--; updateLivesDisplay(); if (vidas > 0) { player.worldX = Math.max(player.width / 2, player.worldX - 300); player.y = groundY - player.height - 200; player.vy = 0; } else { isGameOver = true; gameOutcomeType = "over"; showEndGameModal(); } }
+function updateLivesDisplay() { /* ... (mantido) ... */ livesEl.innerHTML = Array(vidas).fill('<span class="lives-heart">♥</span>').join('');}
+function fireProjectile() { /* ... (mantido) ... */ const cost = 15; if (points < cost && projectiles.length > 2) return; if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return; projectiles.push({ x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)), y: player.y + player.height * 0.4, vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now() }); if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay(); }
+function updateProjectiles() { /* ... (mantido) ... */ projectiles = projectiles.filter(p => p.active); projectiles.forEach(p => { p.x += p.vx; if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false; });}
 
-function fireProjectile() {
-  const cost = 15;
-  if (points < cost && projectiles.length > 2) return;
-  if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return;
-
-  projectiles.push({
-    x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)),
-    y: player.y + player.height * 0.4, // Origem do projétil um pouco mais acima
-    vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now()
-  });
-  if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay();
-}
-function updateProjectiles() {
-  projectiles = projectiles.filter(p => p.active);
-  projectiles.forEach(p => {
-    p.x += p.vx;
-    if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false;
-  });
-}
-
-// ======== Lógica do Desafio de Palavras (Mantida e ajustada) ========
-function triggerChallengeModal(wordDataIdx) {
-  challengeActive = true; usedHint = false;
-  const wordEntry = WORDS_DATA[wordDataIdx];
-  hebrewWordEl.textContent = wordEntry.he;
-  answerInputEl.value = ""; feedbackEl.textContent = ""; hintEl.textContent = "";
-  answerInputEl.focus(); hintBtn.disabled = false;
-  challengeStartTime = performance.now();
-  timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`;
-  clearInterval(challengeTimerInterval);
-  challengeTimerInterval = setInterval(() => {
-    const sLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - (performance.now() - challengeStartTime) / 1000);
-    timerEl.textContent = `Tempo: ${sLeft.toFixed(1)}s`;
-    if (sLeft <= 0) { clearInterval(challengeTimerInterval); failChallenge(wordDataIdx); }
-  }, 90);
-  challengeModal.classList.remove('hidden');
-}
-hintBtn.addEventListener('click', () => { /* ... (código mantido) ... */ 
-    if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) {
-        const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
-        hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica.";
-        usedHint = true; hintBtn.disabled = true;
-    }
-});
-answerForm.addEventListener('submit', (e) => { /* ... (código mantido) ... */ 
-    e.preventDefault();
-    if (!challengeActive || currentChallengeWordMapIndex === -1) return;
-    const userAnswer = normalize(answerInputEl.value);
-    const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
-    const wordEntry = WORDS_DATA[mapElement.wordDataIndex];
-    const isCorrect = wordEntry.pt.some(t => normalize(t) === userAnswer);
-    if (isCorrect) completeChallenge(mapElement.wordDataIndex);
-    else { feedbackEl.textContent = "Tradução incorreta. Tente novamente!"; answerInputEl.select(); }
-});
-
-function completeChallenge(wordDataIdx) {
-  clearInterval(challengeTimerInterval);
-  const timeTaken = (performance.now() - challengeStartTime) / 1000;
-  const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken));
-  points += ptsEarned; wordsFoundCorrectly++;
-  if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true;
-  updatePointsDisplay();
-  feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`;
-  setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800);
-}
-function failChallenge(wordDataIdx) {
-  clearInterval(challengeTimerInterval);
-  feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`;
-  // Opcional: marcar a palavra como "found" para não aparecer de novo, mesmo errando.
-  // if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true; 
-  setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; /* Não chama checkWinCondition */ }, 1500);
-}
-function checkWinCondition() {
-  if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) {
-    isGameOver = true; gameOutcomeType = "win"; showEndGameModal();
-  }
-}
-function showEndGameModal() { /* ... (código mantido) ... */ 
-    endModal.classList.remove('hidden');
-    if (gameOutcomeType === "win") {
-        endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; 
-        endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`;
-    } else {
-        endTitleEl.textContent = "Game Over";
-        endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`;
-    }
-}
+// ======== Lógica do Desafio de Palavras (Mantida) ========
+function triggerChallengeModal(wordDataIdx) { /* ... (mantido) ... */ challengeActive = true; usedHint = false; const wordEntry = WORDS_DATA[wordDataIdx]; hebrewWordEl.textContent = wordEntry.he; answerInputEl.value = ""; feedbackEl.textContent = ""; hintEl.textContent = ""; answerInputEl.focus(); hintBtn.disabled = false; challengeStartTime = performance.now(); timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`; clearInterval(challengeTimerInterval); challengeTimerInterval = setInterval(() => { const sLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - (performance.now() - challengeStartTime) / 1000); timerEl.textContent = `Tempo: ${sLeft.toFixed(1)}s`; if (sLeft <= 0) { clearInterval(challengeTimerInterval); failChallenge(wordDataIdx); } }, 90); challengeModal.classList.remove('hidden'); }
+hintBtn.addEventListener('click', () => { if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) { const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica."; usedHint = true; hintBtn.disabled = true; }});
+answerForm.addEventListener('submit', (e) => { e.preventDefault(); if (!challengeActive || currentChallengeWordMapIndex === -1) return; const userAnswer = normalize(answerInputEl.value); const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; const wordEntry = WORDS_DATA[mapElement.wordDataIndex]; const isCorrect = wordEntry.pt.some(t => normalize(t) === userAnswer); if (isCorrect) completeChallenge(mapElement.wordDataIndex); else { feedbackEl.textContent = "Tradução incorreta. Tente novamente!"; answerInputEl.select(); }});
+function completeChallenge(wordDataIdx) { /* ... (mantido) ... */ clearInterval(challengeTimerInterval); const timeTaken = (performance.now() - challengeStartTime) / 1000; const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken)); points += ptsEarned; wordsFoundCorrectly++; if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true; updatePointsDisplay(); feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`; setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800); }
+function failChallenge(wordDataIdx) { /* ... (mantido) ... */ clearInterval(challengeTimerInterval); feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`; setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; }, 1500); }
+function checkWinCondition() { /* ... (mantido) ... */ if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) { isGameOver = true; gameOutcomeType = "win"; showEndGameModal(); } }
+function showEndGameModal() { /* ... (mantido) ... */ endModal.classList.remove('hidden'); if (gameOutcomeType === "win") { endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`; } else { endTitleEl.textContent = "Game Over"; endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`; } }
 
 // ======== Loop Principal do Jogo ========
 function gameLoop() {
   if (isGameOver) return;
   if (!challengeActive) {
-    updatePlayerState(); updateProjectiles(); checkCollisions();
+    updatePlayerState(); 
+    updateProjectiles(); 
+    updateViloesAnimation(); // Atualiza animação de subida dos vilões
+    checkCollisions();
     if (playerGlowEffect > 0) playerGlowEffect--;
   }
   drawGameWorld();
   requestAnimationFrame(gameLoop);
 }
 
-// ======== Controles (mantidos, com preventDefault ajustado) ========
-document.addEventListener('keydown', (e) => {
-  const activeEl = document.activeElement;
-  const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+// ======== Controles (Mantido) ========
+document.addEventListener('keydown', (e) => { const activeEl = document.activeElement; const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA'); if (!isInputFocused && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space")) { if(!challengeActive) e.preventDefault(); } if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = true; if (e.code === "Space" && !challengeActive) fireProjectile(); if (challengeActive && e.code === "Escape") { challengeModal.classList.add('hidden'); challengeActive = false; clearInterval(challengeTimerInterval); } });
+document.addEventListener('keyup', (e) => { if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = false; });
+// Controles Touch (mantido)
+if (isMobileDevice()) { const touchBtnLeft = document.getElementById('btnLeft'); const touchBtnRight = document.getElementById('btnRight'); const touchBtnUp = document.getElementById('btnUp'); const touchBtnFire = document.getElementById('btnFire'); let touchMappings = [ {btn: touchBtnLeft, code: 'ArrowLeft'}, {btn: touchBtnRight, code: 'ArrowRight'}, {btn: touchBtnUp, code: 'ArrowUp'} ]; touchMappings.forEach(({ btn, code }) => { btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; }, { passive: false }); btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; }, { passive: false }); btn.addEventListener('touchcancel', (e) => { keys[code] = false; }, { passive: false }); }); touchBtnFire.addEventListener('touchstart', (e) => { e.preventDefault(); if (!challengeActive) fireProjectile(); }, { passive: false });}
 
-  if (!isInputFocused && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space")) {
-    if(!challengeActive) e.preventDefault(); // Evita scroll apenas se o desafio não estiver ativo
-  }
-  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = true;
-  if (e.code === "Space" && !challengeActive) fireProjectile();
-  if (challengeActive && e.code === "Escape") {
-    challengeModal.classList.add('hidden'); challengeActive = false; clearInterval(challengeTimerInterval);
-  }
-});
-document.addEventListener('keyup', (e) => {
-  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = false;
-});
-// Controles Touch (mantidos)
-if (isMobileDevice()) { /* ... (código dos botões touch mantido) ... */ }
 
-// ======== Ajuste do Canvas e Inicialização ========
-function adjustGameCanvas() {
-  let newWidth = Math.min(window.innerWidth - 15, 900);
-  let bottomMargin = isMobileDevice() ? (touchControls.offsetHeight > 0 ? touchControls.offsetHeight + 10 : 80) : 20;
-  let topMargin = scoreHud.offsetHeight > 0 ? scoreHud.offsetHeight + 10 : 60;
-  newHeight = Math.max(300, Math.min(window.innerHeight - topMargin - bottomMargin, 550));
-  
-  gameCanvas.width = newWidth; gameCanvas.height = newHeight;
-  if (player) { // Se o jogo já iniciou, ajustar posições relativas
-    player.x = gameCanvas.width / 2.5; 
-    groundY = gameCanvas.height * 0.82;
-    if(player.y + player.height > groundY) player.y = groundY - player.height;
-    drawGameWorld(); // Redesenha com novo tamanho
-  }
-}
+// ======== Ajuste do Canvas e Inicialização (Mantido) ========
+function adjustGameCanvas() { let newWidth = Math.min(window.innerWidth - 15, 900); let bottomMargin = isMobileDevice() ? (touchControls.offsetHeight > 0 ? touchControls.offsetHeight + 10 : 80) : 20; let topMargin = scoreHud.offsetHeight > 0 ? scoreHud.offsetHeight + 10 : 60; newHeight = Math.max(300, Math.min(window.innerHeight - topMargin - bottomMargin, 550)); gameCanvas.width = newWidth; gameCanvas.height = newHeight; if (player) { player.x = gameCanvas.width / 2.5; groundY = gameCanvas.height * 0.82; if(player.y + player.height > groundY) player.y = groundY - player.height; drawGameWorld(); } }
 window.addEventListener('resize', adjustGameCanvas);
-adjustGameCanvas(); // Ajuste inicial
+adjustGameCanvas(); 
 </script>
 </body>
 </html>
