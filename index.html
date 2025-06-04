@@ -1,1689 +1,1061 @@
 <!DOCTYPE html>
-
 <html lang="pt-br">
-
 <head>
-
-  <meta charset="UTF-8" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-  <title>Jogo Hebraico Bíblico – Rodrigo Niskier</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
-
-  <style>
-
-    body { font-family: 'JetBrains Mono', monospace; background: #222c36; }
-
-    canvas { background: transparent; display: block; margin: 0 auto; touch-action: none; }
-
-    .hebrew { font-family: 'Noto Sans Hebrew', sans-serif; font-size: 2.2rem; direction: rtl; }
-
-    .modal-bg { background: rgba(0,0,0,0.7); }
-
-    .slide-in { animation: slide-in 1.1s cubic-bezier(0.4,0,0.2,1);}
-
-    @keyframes slide-in { from { transform: translateY(-30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
-
-    .char-choice { transition: transform 0.18s; }
-
-    .char-choice.selected { transform: scale(1.13); border: 3px solid #2563eb; box-shadow: 0 0 0 4px #2563eb55; z-index: 2; }
-
-    .lives-heart { color: #ff4141; font-size: 2rem; margin-right: 0.3em; }
-
-    @media (max-width: 600px) { #game { margin-top: 10px !important; } }
-
-  </style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Otimizado)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
+  <style>
+    body { font-family: 'JetBrains Mono', monospace; background: #222c36; }
+    canvas { background: transparent; display: block; margin: 0 auto; touch-action: none; }
+    .hebrew { font-family: 'Noto Sans Hebrew', sans-serif; font-size: 2.2rem; direction: rtl; }
+    .modal-bg { background: rgba(0,0,0,0.7); }
+    .slide-in { animation: slide-in 1.1s cubic-bezier(0.4,0,0.2,1);}
+    @keyframes slide-in { from { transform: translateY(-30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .char-choice { transition: transform 0.18s; }
+    .char-choice.selected { transform: scale(1.13); border: 3px solid #2563eb; box-shadow: 0 0 0 4px #2563eb55; z-index: 2; }
+    .lives-heart { color: #ff4141; font-size: 2rem; margin-right: 0.3em; }
+    @media (max-width: 600px) { #game { margin-top: 10px !important; } }
+  </style>
 </head>
-
 <body class="flex flex-col items-center min-h-screen bg-gray-900">
 
-
-
-  <!-- Tela Inicial -->
-
-  <div id="startScreen" class="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center z-50">
-
-    <div class="bg-gray-100 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-6 w-[360px]">
-
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Bem-vindo ao Jogo de Hebraico Bíblico!</h1>
-
-      <div class="flex flex-col gap-2 w-full">
-
-        <label class="text-gray-800 font-semibold mb-1 text-base" for="username">Seu nome de jogador:</label>
-
-        <input id="username" type="text" maxlength="18" autocomplete="off" class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800" placeholder="Digite seu nome..."/>
-
-      </div>
-
-      <div class="w-full">
-
-        <span class="font-semibold text-gray-800 mb-2 block">Escolha seu personagem:</span>
-
-        <div class="flex flex-row gap-7 justify-center mt-1">
-
-          <button id="char1" class="char-choice rounded-full border-2 border-gray-300 p-1 bg-white focus:outline-none">
-
-            <img src="personagem1.png" alt="Personagem 1" class="w-20 h-20 object-cover rounded-full"/>
-
-          </button>
-
-          <button id="char2" class="char-choice rounded-full border-2 border-gray-300 p-1 bg-white focus:outline-none">
-
-            <img src="personagem2.png" alt="Personagem 2" class="w-20 h-20 object-cover rounded-full"/>
-
-          </button>
-
-        </div>
-
-      </div>
-
-      <button id="playBtn" class="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition text-lg disabled:bg-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed" disabled>Play</button>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- Tela de Comandos -->
-
-  <div id="commandScreen" class="fixed inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50 hidden">
-
-    <div class="bg-white rounded-2xl shadow-2xl w-[340px] p-8 flex flex-col items-center gap-6">
-
-      <h2 class="text-2xl font-bold text-blue-800 mb-2">Comandos do Jogo</h2>
-
-      <ul class="text-gray-900 text-base text-left leading-7 mb-3">
-
-        <li><b>Movimentar:</b> <span class="bg-gray-200 rounded px-1">←</span> <span class="bg-gray-200 rounded px-1">→</span> (ou botões laterais)</li>
-
-        <li><b>Pular:</b> <span class="bg-gray-200 rounded px-1">↑</span> (ou botão "↑")</li>
-
-        <li><b>Atirar Cruz:</b> <span class="bg-gray-200 rounded px-1">barra de espaço</span> (ou botão com cruz ✝️)</li>
-
-        <li><b>Coletar palavra:</b> encoste nela</li>
-
-        <li><b>Derrote vilões:</b> atire a cruz neles</li>
-
-        <li><b>Power-up:</b> pegue יָד ("iad") para ganhar poder (100 pontos e brilho especial)</li>
-
-        <li><b>Vidas:</b> você tem 3 corações (perde vida se ficar com pontos negativos após colidir com vilão)</li>
-
-        <li><b>Game Over:</b> se perder todas as vidas</li>
-
-        <li><b>Vitória:</b> colete todas as palavras e derrote todos os vilões</li>
-
-      </ul>
-
-      <button id="okBtn" class="w-full px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">OK</button>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- HUD Pontos e Vidas -->
-
-  <div id="scoreHud" class="fixed top-5 right-8 text-xl text-white z-20 flex items-center gap-7" style="display:none;">
-
-    <div class="bg-gray-700 px-5 py-2 rounded-2xl shadow-lg font-bold flex items-center gap-2">Pontos: <span id="scoreValue">0</span></div>
-
-    <div id="lives" class="flex items-center"></div>
-
-  </div>
-
-  <canvas id="game" width="900" height="440" class="rounded-2xl border-2 border-gray-800 shadow-2xl mt-10" style="display:none;"></canvas>
-
-
-
-  <!-- Controles Touch -->
-
-  <div id="touchControls" class="fixed left-0 bottom-0 w-full flex justify-between items-end px-6 pb-5 z-30" style="display:none;">
-
-    <div class="flex gap-3">
-
-      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnLeft" tabindex="-1">←</button>
-
-      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnRight" tabindex="-1">→</button>
-
-    </div>
-
-    <div class="flex gap-3">
-
-      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnUp" tabindex="-1">↑</button>
-
-      <button class="bg-yellow-500 text-white rounded-full w-16 h-16 text-2xl flex items-center justify-center active:bg-yellow-600" id="btnFire" tabindex="-1">✝️</button>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- Modal de Desafio -->
-
-  <div id="modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-
-    <div class="modal-bg absolute inset-0"></div>
-
-    <div class="relative p-8 bg-gray-100 rounded-xl shadow-2xl w-[350px] slide-in">
-
-      <div class="flex flex-col items-center gap-4">
-
-        <span class="text-lg text-gray-900 font-semibold">Traduza a palavra:</span>
-
-        <span id="hebrewWord" class="hebrew text-4xl text-gray-900"></span>
-
-        <form id="answerForm" class="w-full flex flex-col gap-3 items-center">
-
-          <input type="text" id="answerInput" autocomplete="off" placeholder="Digite a tradução..." class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800">
-
-          <div class="flex flex-row gap-4 w-full justify-between items-center">
-
-            <button type="button" id="hintBtn" class="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg transition">Dica</button>
-
-            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Responder</button>
-
-          </div>
-
-        </form>
-
-        <div id="feedback" class="text-base text-red-600 font-semibold mt-2 min-h-[28px]"></div>
-
-        <div id="hint" class="text-gray-800 text-sm font-medium"></div>
-
-        <div id="timer" class="text-gray-700 text-xs mt-1"></div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- Tela Fim de Jogo -->
-
-  <div id="endModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-
-    <div class="modal-bg absolute inset-0"></div>
-
-    <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center">
-
-      <h2 id="endTitle" class="text-2xl text-blue-800 font-bold mb-4"></h2>
-
-      <p id="endMsg" class="mb-2 text-lg"></p>
-
-      <button onclick="window.location.reload()" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button>
-
-    </div>
-
-  </div>
-
-
+  <div id="startScreen" class="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center z-50">
+    <div class="bg-gray-100 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-6 w-[360px]">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Bem-vindo ao Jogo de Hebraico Bíblico!</h1>
+      <div class="flex flex-col gap-2 w-full">
+        <label class="text-gray-800 font-semibold mb-1 text-base" for="username">Seu nome de jogador:</label>
+        <input id="usernameInput" type="text" maxlength="18" autocomplete="off" class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800" placeholder="Digite seu nome..."/>
+      </div>
+      <div class="w-full">
+        <span class="font-semibold text-gray-800 mb-2 block">Escolha seu personagem:</span>
+        <div class="flex flex-row gap-7 justify-center mt-1">
+          <button id="char1Btn" class="char-choice rounded-full border-2 border-gray-300 p-1 bg-white focus:outline-none">
+            <img src="personagem1.png" alt="Personagem 1" class="w-20 h-20 object-cover rounded-full"/>
+          </button>
+          <button id="char2Btn" class="char-choice rounded-full border-2 border-gray-300 p-1 bg-white focus:outline-none">
+            <img src="personagem2.png" alt="Personagem 2" class="w-20 h-20 object-cover rounded-full"/>
+          </button>
+        </div>
+      </div>
+      <button id="playBtn" class="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition text-lg disabled:bg-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed" disabled>Play</button>
+    </div>
+  </div>
+
+  <div id="commandScreen" class="fixed inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-[340px] p-8 flex flex-col items-center gap-6">
+      <h2 class="text-2xl font-bold text-blue-800 mb-2">Comandos do Jogo</h2>
+      <ul class="text-gray-900 text-base text-left leading-7 mb-3">
+        <li><b>Movimentar:</b> <span class="bg-gray-200 rounded px-1">←</span> <span class="bg-gray-200 rounded px-1">→</span> (ou botões laterais)</li>
+        <li><b>Pular:</b> <span class="bg-gray-200 rounded px-1">↑</span> (ou botão "↑")</li>
+        <li><b>Atirar Cruz:</b> <span class="bg-gray-200 rounded px-1">barra de espaço</span> (ou botão com cruz ✝️)</li>
+        <li><b>Coletar palavra:</b> encoste nela</li>
+        <li><b>Derrote vilões:</b> atire a cruz neles</li>
+        <li><b>Power-up:</b> pegue יָד ("iad") para ganhar poder (100 pontos e brilho especial)</li>
+        <li><b>Vidas:</b> você tem 3 corações (perde vida se ficar com pontos negativos após colidir com vilão)</li>
+        <li><b>Game Over:</b> se perder todas as vidas</li>
+        <li><b>Vitória:</b> colete todas as palavras e derrote todos os vilões</li>
+      </ul>
+      <button id="okBtn" class="w-full px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">OK</button>
+    </div>
+  </div>
+
+  <div id="scoreHud" class="fixed top-5 right-8 text-xl text-white z-20 flex items-center gap-7" style="display:none;">
+    <div class="bg-gray-700 px-5 py-2 rounded-2xl shadow-lg font-bold flex items-center gap-2">Pontos: <span id="scoreValueEl">0</span></div>
+    <div id="livesEl" class="flex items-center"></div>
+  </div>
+
+  <canvas id="gameCanvas" width="900" height="440" class="rounded-2xl border-2 border-gray-800 shadow-2xl mt-10" style="display:none;"></canvas>
+
+  <div id="touchControls" class="fixed left-0 bottom-0 w-full flex justify-between items-end px-6 pb-5 z-30" style="display:none;">
+    <div class="flex gap-3">
+      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnLeft" tabindex="-1">←</button>
+      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnRight" tabindex="-1">→</button>
+    </div>
+    <div class="flex gap-3">
+      <button class="bg-gray-700/80 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-600" id="btnUp" tabindex="-1">↑</button>
+      <button class="bg-yellow-500 text-white rounded-full w-16 h-16 text-2xl flex items-center justify-center active:bg-yellow-600" id="btnFire" tabindex="-1">✝️</button>
+    </div>
+  </div>
+
+  <div id="challengeModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+    <div class="modal-bg absolute inset-0"></div>
+    <div class="relative p-8 bg-gray-100 rounded-xl shadow-2xl w-[350px] slide-in">
+      <div class="flex flex-col items-center gap-4">
+        <span class="text-lg text-gray-900 font-semibold">Traduza a palavra:</span>
+        <span id="hebrewWordEl" class="hebrew text-4xl text-gray-900"></span>
+        <form id="answerForm" class="w-full flex flex-col gap-3 items-center">
+          <input type="text" id="answerInputEl" autocomplete="off" placeholder="Digite a tradução..." class="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 text-lg text-gray-800">
+          <div class="flex flex-row gap-4 w-full justify-between items-center">
+            <button type="button" id="hintBtn" class="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg transition">Dica</button>
+            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Responder</button>
+          </div>
+        </form>
+        <div id="feedbackEl" class="text-base text-red-600 font-semibold mt-2 min-h-[28px]"></div>
+        <div id="hintEl" class="text-gray-800 text-sm font-medium"></div>
+        <div id="timerEl" class="text-gray-700 text-xs mt-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="endModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+    <div class="modal-bg absolute inset-0"></div>
+    <div class="relative p-8 bg-white rounded-xl shadow-2xl w-[370px] slide-in text-center">
+      <h2 id="endTitleEl" class="text-2xl text-blue-800 font-bold mb-4"></h2>
+      <p id="endMsgEl" class="mb-2 text-lg"></p>
+      <button onclick="window.location.reload()" class="mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition">Jogar novamente</button>
+    </div>
+  </div>
 
 <script>
+// ======== Cache de Elementos DOM ========
+const startScreen = document.getElementById('startScreen');
+const usernameInput = document.getElementById('usernameInput');
+const char1Btn = document.getElementById('char1Btn');
+const char2Btn = document.getElementById('char2Btn');
+const playBtn = document.getElementById('playBtn');
+const commandScreen = document.getElementById('commandScreen');
+const okBtn = document.getElementById('okBtn');
+const scoreHud = document.getElementById('scoreHud');
+const scoreValueEl = document.getElementById('scoreValueEl');
+const livesEl = document.getElementById('livesEl');
+const gameCanvas = document.getElementById('gameCanvas');
+const touchControls = document.getElementById('touchControls');
+const challengeModal = document.getElementById('challengeModal');
+const hebrewWordEl = document.getElementById('hebrewWordEl');
+const answerForm = document.getElementById('answerForm');
+const answerInputEl = document.getElementById('answerInputEl');
+const hintBtn = document.getElementById('hintBtn');
+const feedbackEl = document.getElementById('feedbackEl');
+const hintEl = document.getElementById('hintEl');
+const timerEl = document.getElementById('timerEl');
+const endModal = document.getElementById('endModal');
+const endTitleEl = document.getElementById('endTitleEl');
+const endMsgEl = document.getElementById('endMsgEl');
 
-/*  
-
-TODO: Por limite de espaço, vou te entregar em 2 partes:
-
-- Parte 1: Toda a configuração, tela inicial, palavras, layout e funções até o setup do mundo.
-
-- Parte 2 (responda "continue" para receber): Engine principal, movimentação do mundo (personagem centralizado), detecção de colisão, controle de vidas, disparo, desafio, HUD, etc.
-
-*/
-
-
-
-/* ---------- Parte 1 ---------- */
-
-
+const ctx = gameCanvas.getContext("2d");
 
 // ======== Utils ========
-
-function isMobile() {
-
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
-
 function normalize(str) {
-
-  return str
-
-    .toLowerCase()
-
-    .normalize('NFD')
-
-    .replace(/[\u0300-\u036f]/g, '')
-
-    .replace(/[^a-zA-Z0-9ãõç\s]/g, '')
-
-    .trim();
-
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9ãõç\s]/gi, '') // Corrigido para manter letras com acentos comuns e ç
+    .trim();
 }
 
+// ======== Configurações e Estado do Jogo ========
+let selectedChar = 0;
+let playerName = "";
+let usedHint = false;
+const charOptionBtns = [char1Btn, char2Btn];
 
-
-// ======== Tela Inicial & Comando ========
-
-let selectedChar = 0, playerName = "", usedHint = false;
-
-const charBtns = [document.getElementById('char1'), document.getElementById('char2')];
-
-function updatePlayBtnState() {
-
-  document.getElementById('playBtn').disabled = !(playerName.length > 0 && selectedChar > 0);
-
-}
-
-charBtns.forEach((btn, idx) => {
-
-  btn.addEventListener('click', () => {
-
-    selectedChar = idx + 1;
-
-    charBtns.forEach((b, j) => b.classList.toggle('selected', j === idx));
-
-    updatePlayBtnState();
-
-  });
-
-});
-
-document.getElementById('username').addEventListener('input', function() {
-
-  playerName = this.value.trim();
-
-  updatePlayBtnState();
-
-});
-
-document.getElementById('playBtn').addEventListener('click', function() {
-
-  document.getElementById('startScreen').style.display = "none";
-
-  document.getElementById('commandScreen').style.display = "flex";
-
-});
-
-document.getElementById('okBtn').addEventListener('click', function() {
-
-  document.getElementById('commandScreen').style.display = "none";
-
-  document.getElementById('game').style.display = "";
-
-  document.getElementById('scoreHud').style.display = "";
-
-  if (isMobile()) document.getElementById('touchControls').style.display = "flex";
-
-  else document.getElementById('touchControls').style.display = "none";
-
-  startGame();
-
-});
-
-
-
-// ======== Palavras ========
-
-const charImgs = [
-
-  "personagem1.png",
-
-  "personagem2.png",
-
-  "personagem3.png"
-
+const charImgsPaths = [
+  "personagem1.png",
+  "personagem2.png",
+  "personagem3.png" // Para vilão
 ];
-
 const backgroundImageUrl = "fundo.jpg";
-
-const WORDS = [
-
-  {he:"בֵּן", tr:"ben", pt:["filho","menino","descendente"], dica:"Parentesco masculino"},
-
-  {he:"בָּנִים", tr:"banim", pt:["filhos","meninos","descendentes"], dica:"Plural de filho"},
-
-  {he:"אִשָּׁה", tr:"ishá", pt:["mulher","esposa"], dica:"Feminino de homem"},
-
-  {he:"אִישׁ", tr:"ish", pt:["homem","marido"], dica:"Masculino adulto"},
-
-  {he:"נָבִיא", tr:"navi", pt:["profeta"], dica:"Homem que fala por Deus"},
-
-  {he:"מֶלֶךְ", tr:"melekh", pt:["rei"], dica:"Soberano do povo"},
-
-  {he:"מַלְכָּה", tr:"malká", pt:["rainha"], dica:"Soberana do povo"},
-
-  {he:"אֵם", tr:"em", pt:["mãe"], dica:"Progenitora feminina"},
-
-  {he:"אָב", tr:"av", pt:["pai","ancestral"], dica:"Progenitor masculino"},
-
-  {he:"תַּלְמִיד", tr:"talmid", pt:["discípulo","aluno"], dica:"Segue o mestre"},
-
-  {he:"אָמַר", tr:"amar", pt:["disse","falar","falou","dizer"], dica:"Expressar palavras"},
-
-  {he:"הָלַךְ", tr:"halakh", pt:["andou","andar","caminhou","caminhar"], dica:"Locomoção"},
-
-  {he:"אָמְרוּ", tr:"amru", pt:["disseram","falaram"], dica:"Plural de disse"},
-
-  {he:"שָׁמַע", tr:"shama", pt:["ouviu","ouvir"], dica:"Sentido de escutar"},
-
-  {he:"יָשַׁב", tr:"yashav", pt:["sentou","assentar","habitou","morar","residir"], dica:"Ficar em um lugar"},
-
-  {he:"אָכַל", tr:"akal", pt:["comeu","comer"], dica:"Ato de comer"},
-
-  {he:"לָקַח", tr:"lakach", pt:["pegou","tomou","pegar","tomar"], dica:"Ato de tomar algo"},
-
-  {he:"רָאָה", tr:"ra'ah", pt:["viu","ver"], dica:"Perceber com os olhos"},
-
-  {he:"אֵת", tr:"et", pt:["com","junto de","com o"], dica:"Preposição - junto de"},
-
-  {he:"בְּתוֹךְ", tr:"betoch", pt:["dentro","em meio a"], dica:"No interior de algo"},
-
-  {he:"עִם", tr:"im", pt:["com"], dica:"Junto de"},
-
-  {he:"עַל", tr:"al", pt:["sobre","em cima de","acima"], dica:"Em cima"},
-
-  {he:"אֶל", tr:"el", pt:["para","até"], dica:"Direção, movimento"},
-
-  {he:"לִפְנֵי", tr:"lifnei", pt:["antes de","diante de"], dica:"Antes no tempo ou espaço"},
-
-  {he:"דָּבָר", tr:"davar", pt:["palavra","coisa","assunto"], dica:"O que se diz"},
-
-  {he:"עִיר", tr:"ir", pt:["cidade"], dica:"Lugar urbano"},
-
-  {he:"שָׁלוֹם", tr:"shalom", pt:["paz","bem-estar","segurança"], dica:"Desejo de paz"},
-
-  {he:"שָׁנָה", tr:"shanah", pt:["ano"], dica:"Tempo de 12 meses"},
-
-  {he:"מַיִם", tr:"mayim", pt:["água","águas"], dica:"Líquido essencial"},
-
-  {he:"עֵין", tr:"ayin", pt:["olho","vista"], dica:"Sentido da visão"},
-
-  {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true}
-
+const WORDS_DATA = [
+  {he:"בֵּן", tr:"ben", pt:["filho","menino","descendente"], dica:"Parentesco masculino"},
+  {he:"בָּנִים", tr:"banim", pt:["filhos","meninos","descendentes"], dica:"Plural de filho"},
+  {he:"אִשָּׁה", tr:"ishá", pt:["mulher","esposa"], dica:"Feminino de homem"},
+  {he:"אִישׁ", tr:"ish", pt:["homem","marido"], dica:"Masculino adulto"},
+  {he:"נָבִיא", tr:"navi", pt:["profeta"], dica:"Homem que fala por Deus"},
+  {he:"מֶלֶךְ", tr:"melekh", pt:["rei"], dica:"Soberano do povo"},
+  {he:"מַלְכָּה", tr:"malká", pt:["rainha"], dica:"Soberana do povo"},
+  {he:"אֵם", tr:"em", pt:["mãe"], dica:"Progenitora feminina"},
+  {he:"אָב", tr:"av", pt:["pai","ancestral"], dica:"Progenitor masculino"},
+  {he:"תַּלְמִיד", tr:"talmid", pt:["discípulo","aluno"], dica:"Segue o mestre"},
+  {he:"אָמַר", tr:"amar", pt:["disse","falar","falou","dizer"], dica:"Expressar palavras"},
+  {he:"הָלַךְ", tr:"halakh", pt:["andou","andar","caminhou","caminhar"], dica:"Locomoção"},
+  {he:"אָמְרוּ", tr:"amru", pt:["disseram","falaram"], dica:"Plural de disse"},
+  {he:"שָׁמַע", tr:"shama", pt:["ouviu","ouvir"], dica:"Sentido de escutar"},
+  {he:"יָשַׁב", tr:"yashav", pt:["sentou","assentar","habitou","morar","residir"], dica:"Ficar em um lugar"},
+  {he:"אָכַל", tr:"akal", pt:["comeu","comer"], dica:"Ato de comer"},
+  {he:"לָקַח", tr:"lakach", pt:["pegou","tomou","pegar","tomar"], dica:"Ato de tomar algo"},
+  {he:"רָאָה", tr:"ra'ah", pt:["viu","ver"], dica:"Perceber com os olhos"},
+  {he:"אֵת", tr:"et", pt:["com","junto de","com o"], dica:"Preposição - junto de"},
+  {he:"בְּתוֹךְ", tr:"betoch", pt:["dentro","em meio a"], dica:"No interior de algo"},
+  {he:"עִם", tr:"im", pt:["com"], dica:"Junto de"},
+  {he:"עַל", tr:"al", pt:["sobre","em cima de","acima"], dica:"Em cima"},
+  {he:"אֶל", tr:"el", pt:["para","até"], dica:"Direção, movimento"},
+  {he:"לִפְנֵי", tr:"lifnei", pt:["antes de","diante de"], dica:"Antes no tempo ou espaço"},
+  {he:"דָּבָר", tr:"davar", pt:["palavra","coisa","assunto"], dica:"O que se diz"},
+  {he:"עִיר", tr:"ir", pt:["cidade"], dica:"Lugar urbano"},
+  {he:"שָׁלוֹם", tr:"shalom", pt:["paz","bem-estar","segurança"], dica:"Desejo de paz"},
+  {he:"שָׁנָה", tr:"shanah", pt:["ano"], dica:"Tempo de 12 meses"},
+  {he:"מַיִם", tr:"mayim", pt:["água","águas"], dica:"Líquido essencial"},
+  {he:"עֵין", tr:"ayin", pt:["olho","vista"], dica:"Sentido da visão"},
+  {he:"יָד", tr:"yad", pt:["mão","poder"], dica:"Parte do corpo / poder", power:true} // Power-up
 ];
 
+let gameElementsOnMap = []; // Elementos (palavras, power-ups, vilões) posicionados no mapa
+let player, cameraX, worldLength, groundY, currentChallengeWordMapIndex, challengeActive, challengeStartTime,
+  points, wordsFoundCorrectly, viloesDefeated, keys, loadedCharImages, vidas, playerGlowEffect, projectiles, viloesOnMap,
+  isGameOver, gameOutcomeType, wordsToWin, viloesToWin;
 
+let challengeTimerInterval = null;
+const CHALLENGE_TIMEOUT_SECONDS = 16;
+const bgGameImage = new Image();
+bgGameImage.src = backgroundImageUrl;
 
-let gameElements = [];
-
-function setupMapElements() {
-
-  let shuffledWords = WORDS.filter(w=>!w.power).sort(()=>Math.random()-0.5);
-
-  let yadsToAdd = 10, wordsToAdd = 30;
-
-  let powerSpacing = 3, vilaoSpacing = 3, vilaoStart = 7;
-
-  let elements = [], idx=0, yads=0, vilaos=0;
-
-  for (let i=0; i<wordsToAdd; i++) {
-
-    if (i && i%powerSpacing === 0 && yads<yadsToAdd) {
-
-      elements.push({type:"power", idx:WORDS.length-1});
-
-      yads++;
-
-    }
-
-    if (i >= vilaoStart && (i-vilaoStart)%vilaoSpacing === 0) {
-
-      elements.push({type:"vilao"});
-
-      vilaos++;
-
-    }
-
-    elements.push({type:"word", idx:shuffledWords[idx%shuffledWords.length], wordObj:shuffledWords[idx%shuffledWords.length]});
-
-    idx++;
-
-  }
-
-  gameElements = elements;
-
+// ======== Lógica da Tela Inicial e Comandos ========
+function updatePlayButtonState() {
+  playBtn.disabled = !(playerName.length > 0 && selectedChar > 0);
 }
 
-
-
-window.addEventListener('resize', function adjustCanvas(){
-
-  let canvas = document.getElementById("game");
-
-  let ww = Math.min(window.innerWidth-10, 900);
-
-  let wh = Math.max(320, Math.min(window.innerHeight-100, 500));
-
-  canvas.width = ww; canvas.height = wh;
-
+charOptionBtns.forEach((btn, idx) => {
+  btn.addEventListener('click', () => {
+    selectedChar = idx + 1;
+    charOptionBtns.forEach((b, j) => b.classList.toggle('selected', j === idx));
+    updatePlayButtonState();
+  });
 });
 
-/* ---- FIM PARTE 1 ---- */
+usernameInput.addEventListener('input', function() {
+  playerName = this.value.trim();
+  updatePlayButtonState();
+});
 
-</script>
+playBtn.addEventListener('click', function() {
+  startScreen.style.display = "none";
+  commandScreen.style.display = "flex";
+});
 
-<!-- Solicite "continue" para receber a parte 2 (game engine, renderização, física e lógica do novo movimento) -->
+okBtn.addEventListener('click', function() {
+  commandScreen.style.display = "none";
+  gameCanvas.style.display = "block"; // Alterado para block
+  scoreHud.style.display = "flex";   // Alterado para flex
+  if (isMobileDevice()) touchControls.style.display = "flex";
+  else touchControls.style.display = "none";
+  initializeGame();
+});
 
-</body>
+// ======== Configuração do Jogo e Elementos do Mapa ========
+function setupMapElements() {
+  gameElementsOnMap = []; // Limpa elementos anteriores
+  let shuffledWords = WORDS_DATA.filter(w => !w.power).sort(() => Math.random() - 0.5);
+  let powerUpsToAdd = Math.min(10, Math.floor(shuffledWords.length / 3)); // Ajustado para menos power-ups
+  let wordsToPlace = Math.min(30, shuffledWords.length);
+  let powerUpSpacing = Math.floor(wordsToPlace / (powerUpsToAdd + 1)); // Espaçamento mais distribuído
+  let vilaoSpacing = 3; // Mantido
+  let vilaoStartIndex = 7; // Mantido
 
-</html>
+  let elements = [];
+  let wordIdx = 0;
+  let powerUpsPlaced = 0;
+  let viloesPlaced = 0;
+  wordsToWin = 0;
+  viloesToWin = 0;
 
-// ======= GAME ENGINE, RENDERIZAÇÃO E LÓGICA =======
+  const powerUpWordIndex = WORDS_DATA.findIndex(w => w.power);
 
+  for (let i = 0; i < wordsToPlace; i++) {
+    // Adicionar power-up
+    if (i > 0 && powerUpSpacing > 0 && i % powerUpSpacing === 0 && powerUpsPlaced < powerUpsToAdd && powerUpWordIndex !== -1) {
+      elements.push({ type: "power", wordDataIndex: powerUpWordIndex, wordObj: WORDS_DATA[powerUpWordIndex] });
+      powerUpsPlaced++;
+    }
+    // Adicionar vilão
+    if (i >= vilaoStartIndex && (i - vilaoStartIndex) % vilaoSpacing === 0) {
+      elements.push({ type: "vilao" });
+      viloesToWin++;
+      viloesPlaced++;
+    }
+    // Adicionar palavra normal
+    if (wordIdx < shuffledWords.length) {
+      const wordData = shuffledWords[wordIdx];
+      const originalWordIndex = WORDS_DATA.indexOf(wordData);
+      elements.push({ type: "word", wordDataIndex: originalWordIndex, wordObj: wordData });
+      wordsToWin++;
+      wordIdx++;
+    }
+  }
+  // Se não houver vilões suficientes, adicionar mais alguns no final para garantir
+  while(viloesPlaced < 5 && wordsToPlace > 10) { // Exemplo: garantir pelo menos 5 vilões
+      elements.push({ type: "vilao" });
+      viloesToWin++;
+      viloesPlaced++;
+      if(viloesPlaced > wordsToPlace / 2) break; // Evitar excesso de vilões
+  }
 
-
-let player, cameraX, worldLength, groundY, wordPositions, currentWordIdx, challengeActive, challengeStartTime,
-
-  points, wordsFound, keys, charImages, vidas, brilho, cruzes, viloes, gameOver, endGameType;
-
-
-
-let challengeTimer = null, challengeTimeout = 16;
-
-let bgImg = new window.Image();
-
-bgImg.src = backgroundImageUrl;
-
-
-
-// --- Parâmetros do cenário e movimentação
-
-function startGame() {
-
-  player = {
-
-    // O personagem fica centralizado em X (exceto começo/final)
-
-    x: 430, y: 320, width: 36, height: 66,
-
-    vx: 0, vy: 0, speed: 4.2, onGround: true,
-
-    gravity: 0.58, jumpPower: -10.6, direction: 1
-
-  };
-
-  cameraX = 0;
-
-  groundY = 360;
-
-  worldLength = 300 + gameElements.length*120 + 800;
-
-  wordPositions = [];
-
-  currentWordIdx = -1;
-
-  challengeActive = false;
-
-  challengeStartTime = 0;
-
-  points = 200;
-
-  wordsFound = 0;
-
-  keys = {};
-
-  vidas = 3;
-
-  brilho = 0;
-
-  cruzes = [];
-
-  viloes = [];
-
-  gameOver = false;
-
-  endGameType = "";
-
-  updateLives();
-
-  generatePositions();
-
-  loadCharImages().then(()=>{
-
-    drawWorld();
-
-    setTimeout(() => gameLoop(), 250);
-
-  });
-
+  gameElementsOnMap = elements.sort(() => Math.random() - 0.5); // Embaralha a ordem final dos elementos no mapa
 }
 
 
+// ======== Inicialização do Jogo ========
+function initializeGame() {
+  player = {
+    x: gameCanvas.width / 2, // Centralizado inicialmente
+    y: 320,
+    width: 36,
+    height: 66,
+    vx: 0,
+    vy: 0,
+    speed: 4.2,
+    onGround: true,
+    gravity: 0.58,
+    jumpPower: -10.6,
+    direction: 1,
+    worldX: gameCanvas.width / 2 // Posição virtual no mundo
+  };
+  cameraX = 0;
+  groundY = 360; // Ajustar se o canvas mudar muito de altura
+  
+  setupMapElements(); // Configura quais elementos e quantos
+  
+  worldLength = 300 + gameElementsOnMap.length * (120 + Math.random() * 40) + 800; // Comprimento do mundo dinâmico
 
-function loadCharImages() {
+  // Reposicionar elementos no mapa
+  positionGameElements();
 
-  return new Promise(resolve=>{
+  currentChallengeWordMapIndex = -1;
+  challengeActive = false;
+  challengeStartTime = 0;
+  points = 200; // Pontos iniciais
+  wordsFoundCorrectly = 0;
+  viloesDefeated = 0;
+  keys = {};
+  vidas = 3;
+  playerGlowEffect = 0;
+  projectiles = [];
+  // viloesOnMap já é preenchido por positionGameElements
+  isGameOver = false;
+  gameOutcomeType = "";
 
-    charImages = [];
+  updateLivesDisplay();
+  updatePointsDisplay();
 
-    let loads = 0;
+  loadCharacterImages().then(() => {
+    drawGameWorld(); // Primeiro desenho
+    gameLoop();       // Inicia o loop do jogo
+  });
+}
 
-    charImgs.forEach((src,i)=>{
+function loadCharacterImages() {
+  return new Promise(resolve => {
+    loadedCharImages = [];
+    let imagesToLoad = charImgsPaths.length;
+    if (imagesToLoad === 0) {
+        resolve();
+        return;
+    }
+    let loadedCount = 0;
+    charImgsPaths.forEach((src, i) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        loadedCharImages[i] = img;
+        loadedCount++;
+        if (loadedCount === imagesToLoad) resolve();
+      };
+      img.onerror = () => { // Mesmo se falhar, conta como "carregada" para não travar
+        console.error(`Falha ao carregar imagem: ${src}`);
+        loadedCharImages[i] = null; // Marcar como nula
+        loadedCount++;
+        if (loadedCount === imagesToLoad) resolve();
+      };
+    });
+  });
+}
 
-      let img = new Image();
+function positionGameElements() {
+  // Limpa e recria os arrays de posições
+  // wordPositions agora será parte de gameElementsOnMap, assim como viloesOnMap
+  viloesOnMap = [];
+  let currentMapX = 300;
 
-      img.src = src;
+  gameElementsOnMap.forEach(element => {
+    element.x = currentMapX;
+    element.found = false; // Para palavras e power-ups
+    element.collided = false; // Para evitar múltiplas colisões no mesmo frame
 
-      img.onload = () => { charImages[i] = img; if(++loads===charImgs.length) resolve(); }
-
-      img.onerror = () => { loads++; if(loads===charImgs.length) resolve();}
-
-    });
-
-  });
-
+    if (element.type === "vilao") {
+      element.y = groundY - player.height; // Ajustado para a base do vilão no chão
+      element.alive = true;
+      element.cooldown = 0;
+      // Adiciona à lista específica de vilões para acesso rápido, se necessário
+      viloesOnMap.push(element);
+    } else if (element.type === "word" || element.type === "power") {
+      const minY = 220;
+      const maxY = groundY - 54; // (Altura da palavra + alguma margem)
+      element.y = minY + Math.random() * (maxY - minY);
+    }
+    currentMapX += 120 + Math.random() * 60; // Espaçamento maior e mais variado
+  });
+  worldLength = currentMapX + 400; // Garante espaço no final
 }
 
 
-
-function generatePositions() {
-
-  wordPositions = [];
-
-  viloes = [];
-
-  let baseX = 300;
-
-  let lastY = 280; // Começa baixo
-
-  for (let i=0,x=baseX; i<gameElements.length; i++) {
-
-    let el = gameElements[i];
-
-    // Para garantir altura alcançável:
-
-    let minY = 220, maxY = groundY-54;
-
-    let y = minY + Math.random() * (maxY-minY); 
-
-    if (el.type==="vilao") {
-
-      viloes.push({
-
-        x:x, 
-
-        y: groundY-66, // Vilão sempre na linha do chão, ajustado pelo corpo do boneco
-
-        alive:true, cooldown:0
-
-      });
-
-    } else if (el.type==="word" || el.type==="power") {
-
-      wordPositions.push({
-
-        x:x, 
-
-        y:y, 
-
-        found:false, 
-
-        idx:el.type==="word"?WORDS.indexOf(el.wordObj):WORDS.length-1, 
-
-        type:el.type
-
-      });
-
-    }
-
-    x += 120 + Math.random()*40;
-
-    lastY = y;
-
-  }
-
+// ======== Funções de Desenho no Canvas ========
+function drawGameBackground() {
+  if (bgGameImage.complete && bgGameImage.naturalWidth > 0) {
+    // Desenhar background com parallax (exemplo simples)
+    const bgX = -(cameraX * 0.1 % bgGameImage.width); // Movimento mais lento para parallax
+    ctx.drawImage(bgGameImage, bgX, 0, bgGameImage.width, gameCanvas.height);
+    if (bgX + bgGameImage.width < gameCanvas.width) { // Desenha segunda imagem para cobrir
+        ctx.drawImage(bgGameImage, bgX + bgGameImage.width, 0, bgGameImage.width, gameCanvas.height);
+    }
+  } else {
+    ctx.fillStyle = "#7dd3fc"; // Cor sólida se imagem não carregar
+    ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+  }
+  // Nome do criador (opcional)
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.font = "bold 60px JetBrains Mono, monospace"; // Tamanho reduzido
+  ctx.fillStyle = "#2d2d5a";
+  ctx.textAlign = "center";
+  ctx.fillText("Rodrigo Niskier", gameCanvas.width / 2, gameCanvas.height / 2 + 20);
+  ctx.restore();
 }
 
+function drawPlayerCharacter() {
+  ctx.save();
+  const playerScreenX = player.x; // Posição do jogador na tela (fixa, a menos que no início/fim do mundo)
+  const playerScreenY = player.y + player.height / 2; // Centro vertical para transformações
+  
+  ctx.translate(playerScreenX, playerScreenY);
+  ctx.scale(player.direction, 1); // Inverte a direção do desenho
 
+  // Efeito de brilho (power-up)
+  if (playerGlowEffect > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0.45, playerGlowEffect / 90);
+    for (let i = 0; i < 12; i++) { // Menos arcos para otimizar
+      ctx.beginPath();
+      const angle = i * (Math.PI * 2 / 12) + playerGlowEffect / 10;
+      const radius = 30 + 5 * Math.sin(angle);
+      ctx.arc(0, 6, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = `rgba(255,220,30,${0.2 + Math.random() * 0.1})`;
+      ctx.lineWidth = 6 + Math.random() * 4;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = "#ffe75a";
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
-// --- DRAWING ---
+  // Desenho do corpo do personagem (simplificado para exemplo, manter o seu desenho original)
+    // Ombros e peito (paletó azul escuro)
+    ctx.fillStyle = "#273262"; // Paletó
+    ctx.strokeStyle = "#182042"; // Contorno Paletó
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-player.width/2 + 3, -player.height/2 + 10); // Ombro esquerdo
+    ctx.lineTo(player.width/2 - 3, -player.height/2 + 10);  // Ombro direito
+    ctx.lineTo(player.width/2 - 8, player.height/2 - player.height*0.1);   // Lateral direita baixo
+    ctx.lineTo(-player.width/2 + 8, player.height/2 - player.height*0.1);  // Lateral esquerda baixo
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
 
-const canvas = document.getElementById("game");
+    // Camisa branca
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(-player.width/4, -player.height/2 + 10);
+    ctx.lineTo(player.width/4, -player.height/2 + 10);
+    ctx.lineTo(player.width/4, player.height/2 - player.height*0.3);
+    ctx.lineTo(-player.width/4, player.height/2 - player.height*0.3);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Gravata
+    ctx.fillStyle = "#be2323";
+    ctx.beginPath();
+    ctx.arc(0, -player.height/2 + 13, 3, 0, Math.PI*2); // Nó da gravata
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, -player.height/2 + 16);
+    ctx.lineTo(-4, player.height/2 - player.height*0.4);
+    ctx.lineTo(4, player.height/2 - player.height*0.4);
+    ctx.closePath();
+    ctx.fill();
 
-const ctx = canvas.getContext("2d");
+  // Cabeça com imagem
+  const headRadius = player.width / 2;
+  const headYOffset = -player.height / 2;
+  ctx.beginPath();
+  ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI);
+  ctx.closePath();
+  ctx.save();
+  ctx.clip(); // Clip para a imagem ficar redonda
+  if (loadedCharImages && loadedCharImages[selectedChar - 1]) {
+    ctx.drawImage(loadedCharImages[selectedChar - 1], -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2);
+  } else { // Fallback se imagem não carregar
+    ctx.fillStyle = "#f8e6d4"; // Cor de pele
+    ctx.fill();
+  }
+  ctx.restore(); // Restaura o clip
 
-function drawBackground() {
-
-  if(bgImg.complete && bgImg.naturalWidth) {
-
-    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-
-  } else {
-
-    ctx.fillStyle = "#7dd3fc";
-
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  }
-
-  ctx.save();
-
-  ctx.globalAlpha = 0.13;
-
-  ctx.font = "bold 80px JetBrains Mono, monospace";
-
-  ctx.fillStyle = "#2d2d5a";
-
-  ctx.textAlign = "center";
-
-  ctx.fillText("Rodrigo Niskier", canvas.width/2, canvas.height/2+30);
-
-  ctx.restore();
-
+  ctx.restore(); // Restaura o translate e scale
 }
 
-function drawPlayer() {
-
-  ctx.save();
-
-  // Boneco SEM movimentar-se em X, sempre centralizado (exceto começo/fim)
-
-  let px = player.x, py = player.y + player.height / 2;
-
-  ctx.translate(px, py);
-
-  ctx.scale(player.direction, 1);
-
-  // Brilho de poder?
-
-  if (brilho>0) {
-
-    ctx.save();
-
-    ctx.globalAlpha = Math.max(0.45, brilho/90);
-
-    for(let i=0;i<16;i++){
-
-      ctx.beginPath();
-
-      ctx.arc(0,6,32+6*Math.sin(i+brilho/8),0,2*Math.PI);
-
-      ctx.strokeStyle = `rgba(255,220,30,${0.26 + Math.random()*0.09})`;
-
-      ctx.lineWidth = 8+Math.random()*6;
-
-      ctx.shadowBlur = 17;
-
-      ctx.shadowColor = "#ffe75a";
-
-      ctx.stroke();
-
-    }
-
-    ctx.restore();
-
-  }
-
-  // Corpo, gravata, camisa, braços, pernas e cabeça (como antes)
-
-  // Ombros e peito (paletó azul escuro)
-
-  ctx.save();
-
-  ctx.beginPath();
-
-  ctx.moveTo(-21, -4);
-
-  ctx.lineTo(21, -4);
-
-  ctx.lineTo(15, 36);
-
-  ctx.lineTo(-15, 36);
-
-  ctx.closePath();
-
-  ctx.fillStyle = "#273262";
-
-  ctx.fill();
-
-  ctx.strokeStyle = "#182042";
-
-  ctx.lineWidth = 2.2;
-
-  ctx.stroke();
-
-  ctx.restore();
-
-  // Camisa branca sob paletó
-
-  ctx.save();
-
-  ctx.beginPath();
-
-  ctx.moveTo(-7, -4);
-
-  ctx.lineTo(7, -4);
-
-  ctx.lineTo(7, 24);
-
-  ctx.lineTo(-7, 24);
-
-  ctx.closePath();
-
-  ctx.fillStyle = "#fff";
-
-  ctx.fill();
-
-  ctx.restore();
-
-  // Gravata vermelha
-
-  ctx.save();
-
-  ctx.beginPath();
-
-  ctx.arc(0, 0, 3.5, 0, 2 * Math.PI);
-
-  ctx.fillStyle = "#be2323";
-
-  ctx.fill();
-
-  ctx.beginPath();
-
-  ctx.moveTo(0, 3);
-
-  ctx.lineTo(-5, 22);
-
-  ctx.lineTo(5, 22);
-
-  ctx.closePath();
-
-  ctx.fillStyle = "#be2323";
-
-  ctx.fill();
-
-  ctx.restore();
-
-  // Braços (paletó azul escuro)
-
-  ctx.save();
-
-  ctx.lineWidth = 9;
-
-  ctx.strokeStyle = "#273262";
-
-  ctx.beginPath();
-
-  ctx.moveTo(-19, 2); ctx.lineTo(-29, 34);
-
-  ctx.moveTo(19, 2); ctx.lineTo(29, 34);
-
-  ctx.stroke();
-
-  ctx.lineWidth = 6;
-
-  ctx.strokeStyle = "#fff";
-
-  ctx.beginPath();
-
-  ctx.moveTo(-29, 34); ctx.lineTo(-29, 38);
-
-  ctx.moveTo(29, 34); ctx.lineTo(29, 38);
-
-  ctx.stroke();
-
-  ctx.lineWidth = 6;
-
-  ctx.strokeStyle = "#f9e5ce";
-
-  ctx.beginPath();
-
-  ctx.moveTo(-29, 39); ctx.lineTo(-29, 43);
-
-  ctx.moveTo(29, 39); ctx.lineTo(29, 43);
-
-  ctx.stroke();
-
-  ctx.restore();
-
-  // Pernas
-
-  ctx.save();
-
-  ctx.lineWidth = 9;
-
-  ctx.strokeStyle = "#191d25";
-
-  ctx.beginPath();
-
-  ctx.moveTo(-7, 36); ctx.lineTo(-10, 63);
-
-  ctx.moveTo(7, 36); ctx.lineTo(10, 63);
-
-  ctx.stroke();
-
-  ctx.lineWidth = 7.5;
-
-  ctx.strokeStyle = "#353942";
-
-  ctx.beginPath();
-
-  ctx.moveTo(-10, 64); ctx.lineTo(-10, 67);
-
-  ctx.moveTo(10, 64); ctx.lineTo(10, 67);
-
-  ctx.stroke();
-
-  ctx.restore();
-
-  // Cabeça (imagem)
-
-  ctx.save();
-
-  ctx.beginPath();
-
-  ctx.arc(0, -21, 18, 0, 2 * Math.PI);
-
-  ctx.closePath();
-
-  ctx.clip();
-
-  if (charImages && charImages[selectedChar-1]) {
-
-    ctx.drawImage(charImages[selectedChar-1], -18, -39, 36, 36);
-
-  } else {
-
-    ctx.fillStyle = "#f8e6d4";
-
-    ctx.arc(0, -21, 17, 0, 2 * Math.PI);
-
-    ctx.fill();
-
-  }
-
-  ctx.restore();
-
-  ctx.restore();
-
+function drawGameGround() {
+  const screenGroundY = groundY - cameraX * 0; // Para ground fixo na tela. Se quiser parallax no chão, ajuste o multiplicador de cameraX.
+  ctx.fillStyle = "#222b3e";
+  ctx.fillRect(0, screenGroundY, gameCanvas.width, gameCanvas.height - screenGroundY);
+  ctx.fillStyle = "#495980";
+  ctx.fillRect(0, screenGroundY + 30, gameCanvas.width, gameCanvas.height - screenGroundY - 30);
+  // Detalhes do chão
+  ctx.fillStyle = "#94a3b8";
+  for (let i = 0; i < 40; i++) {
+      const detailX = (i * 100 - cameraX * 0.5) % (4000 + gameCanvas.width) - gameCanvas.width/2 ; // Parallax nos detalhes
+      if (detailX > -30 && detailX < gameCanvas.width) { // Desenha apenas se visível
+        ctx.fillRect(detailX , screenGroundY + 30, 30, 7);
+      }
+  }
 }
 
-function drawGround() {
+function drawMapElements() { // Palavras, Power-ups, Vilões
+  gameElementsOnMap.forEach(element => {
+    if (element.type === "vilao" && !element.alive) return; // Não desenha vilão morto
+    if ((element.type === "word" || element.type === "power") && element.found) return; // Não desenha palavra/powerup coletado
 
-  ctx.fillStyle = "#222b3e";
+    const screenX = worldToScreenX(element.x);
+    // Otimização: Não desenhar elementos muito fora da tela
+    const elementWidth = (element.type === "vilao" ? player.width : 100); // Largura aproximada para culling
+    if (screenX < -elementWidth || screenX > gameCanvas.width + elementWidth) {
+      return;
+    }
 
-  ctx.fillRect(0, groundY, canvas.width, canvas.height-groundY);
-
-  ctx.fillStyle = "#495980";
-
-  ctx.fillRect(0, groundY+30, canvas.width, canvas.height-groundY-30);
-
-  for(let i=0;i<40;i++){
-
-    ctx.fillStyle = "#94a3b8";
-
-    ctx.fillRect(i*100, groundY+30, 30, 7);
-
-  }
-
+    ctx.save();
+    if (element.type === "word" || element.type === "power") {
+      ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif";
+      ctx.textAlign = "center";
+      ctx.shadowColor = "#facc15";
+      ctx.shadowBlur = element.type === "power" ? 15 : 7;
+      ctx.globalAlpha = element.type === "power" ? 0.93 : 0.82;
+      ctx.fillStyle = element.type === "power" ? "#ffe34d" : "#fbbf24";
+      ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + 35);
+    } else if (element.type === "vilao") {
+      const vilaoScreenY = element.y + player.height / 2; // Ajustar para centro vertical
+      ctx.translate(screenX, vilaoScreenY);
+      // Desenho do vilão (similar ao player, mas com imagem do vilão)
+      const headRadius = player.width / 2;
+      const headYOffset = -player.height / 2;
+      ctx.beginPath();
+      ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI);
+      ctx.closePath();
+      ctx.save();
+      ctx.clip();
+      if (loadedCharImages && loadedCharImages[2]) { // Imagem do vilão é a terceira
+        ctx.drawImage(loadedCharImages[2], -headRadius, headYOffset-headRadius, headRadius*2, headRadius*2);
+      } else {
+        ctx.fillStyle = "#5a2d2d"; // Cor escura para vilão fallback
+        ctx.fill();
+      }
+      ctx.restore(); // clip
+      // Corpo simples para vilão (exemplo)
+      ctx.fillStyle = "#232323";
+      ctx.fillRect(-player.width/2 + 5, -player.height/2 + 20, player.width-10, player.height-20);
+    }
+    ctx.restore();
+  });
 }
 
-function drawWords() {
-
-  wordPositions.forEach((wp, k) => {
-
-    if (!wp.found) {
-
-      ctx.save();
-
-      ctx.font = "2.2rem 'Noto Sans Hebrew', sans-serif";
-
-      ctx.textAlign = "center";
-
-      ctx.shadowColor = "#facc15";
-
-      ctx.shadowBlur = wp.type==="power"?15:7;
-
-      ctx.globalAlpha = wp.type==="power"?0.93:0.82;
-
-      ctx.fillStyle = wp.type==="power"?"#ffe34d":"#fbbf24";
-
-      // Convertemos x do mundo para x de tela:
-
-      ctx.fillText(WORDS[wp.idx].he, worldToScreenX(wp.x), wp.y + 35);
-
-      ctx.restore();
-
-    }
-
-  });
-
+function drawProjectiles() {
+  projectiles.forEach(proj => {
+    if (!proj.active) return;
+    const screenX = worldToScreenX(proj.x);
+    if (screenX < -20 || screenX > gameCanvas.width + 20) { // Culling
+        proj.active = false; // Desativa se muito fora da tela
+        return;
+    }
+    ctx.save();
+    ctx.translate(screenX, proj.y + player.height / 2); // Y da cruz
+    ctx.rotate(proj.dir * Date.now() * 0.001); // Rotação suave
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#ffe469";
+    ctx.beginPath();
+    ctx.moveTo(-7,0); ctx.lineTo(7,0); // Horizontal
+    ctx.moveTo(0,-11); ctx.lineTo(0,11); // Vertical
+    ctx.stroke();
+    // Detalhe branco
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(-6,0); ctx.lineTo(6,0);
+    ctx.moveTo(0,-10); ctx.lineTo(0,10);
+    ctx.stroke();
+    ctx.restore();
+  });
 }
 
-function drawViloes() {
+function drawGameWorld() {
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height); // Limpa o canvas
+  drawGameBackground();
+  drawGameGround();
+  drawMapElements();
+  drawProjectiles();
+  drawPlayerCharacter();
 
-  viloes.forEach((v)=>{
-
-    if (!v.alive) return;
-
-    let px = worldToScreenX(v.x), py = v.y+30;
-
-    ctx.save();
-
-    ctx.beginPath();
-
-    ctx.arc(px, py-38, 18, 0, 2*Math.PI);
-
-    ctx.closePath();
-
-    ctx.clip();
-
-    if (charImages[2]) ctx.drawImage(charImages[2], px-18, py-56, 36,36);
-
-    ctx.restore();
-
-    // Corpo preto longo
-
-    ctx.save();
-
-    ctx.beginPath();
-
-    ctx.moveTo(px-17, py-19);
-
-    ctx.lineTo(px+17, py-19);
-
-    ctx.lineTo(px+12, py+37);
-
-    ctx.lineTo(px-12, py+37);
-
-    ctx.closePath();
-
-    ctx.fillStyle = "#232323";
-
-    ctx.fill();
-
-    // Faixa branca (cinto)
-
-    ctx.fillStyle = "#fff";
-
-    ctx.fillRect(px-10, py+14, 20, 5);
-
-    ctx.restore();
-
-  });
-
+  // Informações de Debug (opcional)
+  // ctx.save();
+  // ctx.globalAlpha = 0.5;
+  // ctx.font = "12px monospace";
+  // ctx.fillStyle = "#fff";
+  // ctx.fillText(`Player WorldX: ${player.worldX.toFixed(0)} / ${worldLength.toFixed(0)}`, 10, 20);
+  // ctx.fillText(`CameraX: ${cameraX.toFixed(0)}`, 10, 35);
+  // ctx.fillText(`Words to Win: ${wordsFoundCorrectly}/${wordsToWin}`, 10, 50);
+  // ctx.fillText(`Vilões: ${viloesDefeated}/${viloesToWin}`, 10, 65);
+  // ctx.restore();
 }
 
-function drawCruzes() {
-
-  cruzes.forEach(cr=>{
-
-    if (!cr.active) return;
-
-    ctx.save();
-
-    ctx.translate(worldToScreenX(cr.x), cr.y+player.height/2);
-
-    ctx.rotate(cr.dir*0.08);
-
-    ctx.globalAlpha = 0.9;
-
-    ctx.lineWidth = 4;
-
-    ctx.strokeStyle = "#ffe469";
-
-    ctx.beginPath();
-
-    ctx.moveTo(-7,0); ctx.lineTo(7,0);
-
-    ctx.moveTo(0,-11); ctx.lineTo(0,11);
-
-    ctx.stroke();
-
-    ctx.lineWidth = 2;
-
-    ctx.strokeStyle = "#fff";
-
-    ctx.beginPath();
-
-    ctx.moveTo(-6,0); ctx.lineTo(6,0);
-
-    ctx.moveTo(0,-10); ctx.lineTo(0,10);
-
-    ctx.stroke();
-
-    ctx.restore();
-
-  });
-
+// ======== Coordenadas e Movimentação do Mundo ========
+function worldToScreenX(worldXCoord) {
+  // O jogador (player.x) está sempre no centro da tela, exceto nos limites do mundo.
+  // cameraX representa o deslocamento do mundo.
+  return worldXCoord - cameraX;
 }
 
-function drawWorld() {
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawBackground();
-
-  drawGround();
-
-  drawWords();
-
-  drawViloes();
-
-  drawCruzes();
-
-  drawPlayer();
-
-  ctx.save();
-
-  ctx.globalAlpha = 0.15;
-
-  ctx.font = "16px monospace";
-
-  ctx.fillStyle = "#fff";
-
-  ctx.fillText(`Pos: ${(getWorldX()|0)}/${worldLength}`, 35, 24);
-
-  ctx.restore();
-
+function getPlayerWorldX() {
+  return player.worldX;
 }
 
+// ======== Lógica de Atualização do Jogo (Física, Movimento, Colisões) ========
+function updatePlayerState() {
+  player.vx = 0; // Reseta velocidade horizontal base (movimento é pelo mundo)
+
+  // Movimento Horizontal do Mundo (Câmera)
+  let moveSpeed = player.speed;
+  if (keys["ArrowLeft"]) {
+    player.worldX -= moveSpeed;
+    player.direction = -1;
+  }
+  if (keys["ArrowRight"]) {
+    player.worldX += moveSpeed;
+    player.direction = 1;
+  }
+  // Limitar player.worldX aos limites do mundo
+  player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2));
 
 
-// O personagem fica centralizado em X, o mundo se move para a esquerda/direita
+  // Atualizar cameraX para seguir o jogador, mantendo-o no centro
+  cameraX = player.worldX - player.x;
+  // Limitar cameraX para que o "início" e "fim" do mundo sejam visíveis
+  cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
+  
+  // Se o jogador está no início do mundo, ele se move na tela até o centro
+  if (player.worldX < gameCanvas.width / 2) {
+      player.x = player.worldX;
+  } 
+  // Se o jogador está no fim do mundo, ele se move na tela a partir do centro
+  else if (player.worldX > worldLength - gameCanvas.width / 2) {
+      player.x = gameCanvas.width - (worldLength - player.worldX);
+  }
+  // Senão, o jogador fica no centro da tela
+  else {
+      player.x = gameCanvas.width / 2;
+  }
 
-function worldToScreenX(x) {
 
-  // Player sempre no meio da tela (ou início/fim)
+  // Movimento Vertical (Pulo e Gravidade)
+  if (keys["ArrowUp"] && player.onGround) {
+    player.vy = player.jumpPower;
+    player.onGround = false;
+  }
+  player.vy += player.gravity;
+  player.y += player.vy;
 
-  const centerX = Math.floor(canvas.width/2);
-
-  const minWorldX = centerX;
-
-  const maxWorldX = worldLength - centerX;
-
-  let px = getWorldX();
-
-  if (px < minWorldX) return x;
-
-  if (px > maxWorldX) return x - (worldLength-canvas.width);
-
-  return x - (px - centerX);
-
+  // Colisão com o chão
+  if (player.y + player.height >= groundY) { // Ajuste para base do jogador no chão
+    player.y = groundY - player.height;
+    player.vy = 0;
+    player.onGround = true;
+  }
+  // Limite superior da tela (teto)
+  if (player.y < 0) { // Não 80, mas o topo do canvas
+      player.y = 0;
+      player.vy = 0;
+  }
 }
 
-function getWorldX() {
+function checkCollisions() {
+  if (challengeActive) return;
 
-  // Calcula a posição "virtual" do jogador no mundo
+  // Resetar flag de colisão para todos os elementos no início da verificação
+  gameElementsOnMap.forEach(el => el.collidedThisFrame = false);
 
-  return player.worldX !== undefined ? player.worldX : player.x;
+  const playerRect = {
+    x: getPlayerWorldX() - player.width / 2, // Posição real do jogador no mundo
+    y: player.y,
+    width: player.width,
+    height: player.height
+  };
 
+  gameElementsOnMap.forEach((element, mapIndex) => {
+    if (element.collidedThisFrame) return; // Já colidiu neste frame
+
+    let elementRect;
+    if (element.type === "vilao") {
+      if (!element.alive) return;
+      elementRect = { x: element.x - player.width / 2, y: element.y, width: player.width, height: player.height };
+    } else if (element.type === "word" || element.type === "power") {
+      if (element.found) return;
+      // A "hitbox" da palavra pode ser mais generosa
+      elementRect = { x: element.x - 50, y: element.y, width: 100, height: 54 };
+    } else {
+      return; // Tipo de elemento desconhecido
+    }
+
+    // Checagem de colisão AABB (Axis-Aligned Bounding Box)
+    if (playerRect.x < elementRect.x + elementRect.width &&
+        playerRect.x + playerRect.width > elementRect.x &&
+        playerRect.y < elementRect.y + elementRect.height &&
+        playerRect.y + playerRect.height > elementRect.y) {
+      
+      element.collidedThisFrame = true; // Marcar como colidido neste frame
+
+      if (element.type === "power") {
+        points += 100;
+        playerGlowEffect = 90; // Frames de brilho
+        updatePointsDisplay();
+        element.found = true; // Marca como coletado
+        // setTimeout para remover o brilho é gerenciado no gameLoop (playerGlowEffect--)
+      } else if (element.type === "word") {
+        currentChallengeWordMapIndex = mapIndex; // Índice do elemento no gameElementsOnMap
+        triggerChallengeModal(element.wordDataIndex); // Passa o índice de WORDS_DATA
+      } else if (element.type === "vilao") {
+        if (element.cooldown <= 0) {
+          points -= 50;
+          updatePointsDisplay();
+          element.cooldown = 60; // Frames de invulnerabilidade do vilão após hit
+          playerGlowEffect = 0; // Perde brilho se tinha
+          if (points < 0 && vidas > 0) { // Apenas perde vida se os pontos ficarem negativos E tem vidas
+            loseLife();
+            if (vidas > 0) points = 50; // Recupera alguns pontos para não perder vida em sequência
+          } else if (vidas === 0 && points < 0) { // Se já não tem vidas e pontos negativos, game over
+             loseLife(); // Para acionar o game over
+          }
+        }
+      }
+    }
+    if (element.type === "vilao" && element.cooldown > 0) {
+      element.cooldown--;
+    }
+  });
+
+  // Colisão de Projéteis com Vilões
+  projectiles.forEach(proj => {
+    if (!proj.active) return;
+    const projRect = { x: proj.x - 7, y: proj.y, width: 14, height: 22 }; // Hitbox da cruz
+
+    viloesOnMap.forEach(vilao => {
+      if (!vilao.alive || vilao.collidedThisFrameProjectile) return;
+      const vilaoRect = { x: vilao.x - player.width / 2, y: vilao.y, width: player.width, height: player.height };
+
+      if (projRect.x < vilaoRect.x + vilaoRect.width &&
+          projRect.x + projRect.width > vilaoRect.x &&
+          projRect.y < vilaoRect.y + vilaoRect.height &&
+          projRect.y + projRect.height > vilaoRect.y) {
+        
+        vilao.collidedThisFrameProjectile = true; // Evita que o mesmo projétil atinja várias vezes no mesmo frame
+        vilao.alive = false;
+        proj.active = false; // Desativa o projétil
+        viloesDefeated++;
+        points += 25; // Pontos por derrotar vilão
+        updatePointsDisplay();
+        checkWinCondition();
+      }
+    });
+    viloesOnMap.forEach(v => v.collidedThisFrameProjectile = false); // Reset no final do loop de projéteis
+  });
 }
 
-
-
-// --- FÍSICA, MOVIMENTO, LÓGICA ---
-
-function updatePlayer() {
-
-  // O player em si só se move verticalmente; horizontalmente, é o mundo que "anda"
-
-  player.vx = 0;
-
-  if (keys["ArrowLeft"]) { moveWorld(-player.speed); player.direction = -1;}
-
-  if (keys["ArrowRight"]) { moveWorld(+player.speed); player.direction = 1;}
-
-  if (keys["ArrowUp"] && player.onGround) {
-
-    player.vy = player.jumpPower; player.onGround = false;
-
-  }
-
-  player.vy += player.gravity;
-
-  player.y += player.vy;
-
-  if (player.y + player.height >= groundY+2) {
-
-    player.y = groundY - player.height + 2;
-
-    player.vy = 0;
-
-    player.onGround = true;
-
-  }
-
-  if (player.y < 80) { player.y = 80; player.vy = 0; }
-
-}
-
-
-
-function moveWorld(dx) {
-
-  // A variável player.worldX representa a posição real do jogador no mundo (invisível)
-
-  if (player.worldX === undefined) player.worldX = player.x;
-
-  player.worldX += dx;
-
-  if (player.worldX < 0) player.worldX = 0;
-
-  if (player.worldX > worldLength-player.width) player.worldX = worldLength-player.width;
-
-}
-
-
-
-function checkWordCollision() {
-
-  if (challengeActive) return;
-
-  for (let i = 0; i < wordPositions.length; i++) {
-
-    let wp = wordPositions[i];
-
-    if (!wp.found &&
-
-      Math.abs(getWorldX() - wp.x) < 50 &&
-
-      player.y + player.height > wp.y &&
-
-      player.y < wp.y + 54) {
-
-      currentWordIdx = i;
-
-      if (wp.type==="power") {
-
-        points += 100; brilho = 90;
-
-        document.getElementById('scoreValue').textContent = points;
-
-        wp.found = true;
-
-        setTimeout(()=>{ brilho=0; },3000);
-
-        return;
-
-      } else {
-
-        triggerChallenge(wp.idx);
-
-        break;
-
-      }
-
-    }
-
-  }
-
-}
-
-function checkVilaoCollision() {
-
-  if (challengeActive) return;
-
-  viloes.forEach((v) => {
-
-    if (!v.alive) return;
-
-    if (
-
-      Math.abs(getWorldX() - v.x) < 45 &&
-
-      player.y + player.height > v.y-5 &&
-
-      player.y < v.y + 50
-
-    ) {
-
-      if (v.cooldown <= 0) {
-
-        points -= 50;
-
-        updatePoints();
-
-        v.cooldown = 50;
-
-        brilho = 0;
-
-        if (points < 0) {
-
-          loseLife();
-
-        }
-
-      }
-
-    }
-
-    if (v.cooldown > 0) v.cooldown--;
-
-  });
-
-}
-
-function checkCruzCollision() {
-
-  cruzes.forEach(cr=>{
-
-    if (!cr.active) return;
-
-    viloes.forEach((v)=>{
-
-      if (!v.alive) return;
-
-      if (
-
-        Math.abs(cr.x - v.x) < 35 &&
-
-        cr.y + 20 > v.y &&
-
-        cr.y < v.y + 50
-
-      ) {
-
-        v.alive = false;
-
-        cr.active = false;
-
-      }
-
-    });
-
-  });
-
-}
-
-function updatePoints() {
-
-  document.getElementById('scoreValue').textContent = Math.max(0, points);
-
+function updatePointsDisplay() {
+  scoreValueEl.textContent = Math.max(0, points); // Não mostra pontos negativos no HUD
 }
 
 function loseLife() {
-
-  vidas--;
-
-  updateLives();
-
-  if (vidas > 0) {
-
-    player.y = 320; player.worldX = 80; points = 200; updatePoints();
-
-  } else {
-
-    endGameType = "over";
-
-    showEndModal();
-
-  }
-
+  vidas--;
+  updateLivesDisplay();
+  if (vidas > 0) {
+    // Resetar posição do jogador para um local seguro (ex: início da "tela" ou um checkpoint)
+    player.worldX = Math.max(player.width / 2, player.worldX - 200); // Recua um pouco
+    player.y = groundY - player.height - 150; // Reposiciona mais alto para cair
+    player.vy = 0;
+    // Breve invulnerabilidade ou piscar (não implementado aqui)
+  } else {
+    isGameOver = true;
+    gameOutcomeType = "over";
+    showEndGameModal();
+  }
 }
 
-function updateLives() {
-
-  let html = "";
-
-  for (let i=0; i<vidas; i++) html += `<span class="lives-heart">♥</span>`;
-
-  document.getElementById('lives').innerHTML = html;
-
+function updateLivesDisplay() {
+  let html = "";
+  for (let i = 0; i < vidas; i++) html += `<span class="lives-heart">♥</span>`;
+  livesEl.innerHTML = html;
 }
 
-function fireCruz() {
+function fireProjectile() {
+  if (points < 20 && projectiles.length > 3) return; // Custo para atirar e limite de projéteis na tela
+  const cost = 10;
+  if (points < cost && vidas > 0) return; // Só não atira se não tiver pontos E tem vidas
+  if (vidas === 0 && points < cost) return; // Se game over, não atira
 
-  if (points<100) return;
-
-  let dir = player.direction || 1;
-
-  cruzes.push({
-
-    x: getWorldX()+(dir>0?26:-6), y: player.y+16,
-
-    vx: dir*11, dir: dir, active:true, t:0
-
-  });
-
-  points -= 100; updatePoints();
-
+  let startX = getPlayerWorldX() + (player.direction > 0 ? player.width / 2 + 5 : -player.width / 2 - 5);
+  projectiles.push({
+    x: startX,
+    y: player.y + player.height / 3, // Altura do disparo
+    vx: player.direction * 11, // Velocidade do projétil
+    dir: player.direction,
+    active: true,
+    creationTime: Date.now()
+  });
+  if (vidas > 0 || points >= cost) points -= cost; // Subtrai pontos se não for game over
+  updatePointsDisplay();
 }
 
-function updateCruzes() {
-
-  cruzes.forEach(cr=>{
-
-    if (!cr.active) return;
-
-    cr.x += cr.vx; cr.t++;
-
-    if (cr.x<0 || cr.x>worldLength || cr.t>60) cr.active = false;
-
-  });
-
+function updateProjectiles() {
+  projectiles = projectiles.filter(proj => proj.active); // Remove inativos
+  projectiles.forEach(proj => {
+    proj.x += proj.vx;
+    // Desativar projétil se muito longe ou após um tempo
+    if (proj.x < cameraX - gameCanvas.width || proj.x > cameraX + gameCanvas.width * 2 || Date.now() - proj.creationTime > 3000) {
+      proj.active = false;
+    }
+  });
 }
 
+// ======== Lógica do Desafio de Palavras ========
+function triggerChallengeModal(wordDataIdx) { // wordDataIdx é o índice em WORDS_DATA
+  challengeActive = true;
+  usedHint = false;
+  // currentChallengeWordMapIndex já foi definido em checkCollisions
 
-
-// --- DESAFIO DE PALAVRA ---
-
-function triggerChallenge(wordIdx) {
-
-  challengeActive = true; usedHint = false;
-
-  document.getElementById('modal').classList.remove('hidden');
-
-  document.getElementById('hebrewWord').textContent = WORDS[wordIdx].he;
-
-  document.getElementById('answerInput').value = "";
-
-  document.getElementById('feedback').textContent = "";
-
-  document.getElementById('hint').textContent = "";
-
-  document.getElementById('answerInput').focus();
-
-  document.getElementById('hintBtn').disabled = false;
-
-  challengeStartTime = performance.now();
-
-  let timerEl = document.getElementById('timer');
-
-  timerEl.textContent = `Tempo: ${challengeTimeout.toFixed(1)}s`;
-
-  let secondsElapsed = 0;
-
-  clearInterval(challengeTimer);
-
-  challengeTimer = setInterval(() => {
-
-    let now = performance.now();
-
-    secondsElapsed = (now - challengeStartTime)/1000;
-
-    let left = Math.max(0, challengeTimeout - secondsElapsed);
-
-    timerEl.textContent = `Tempo: ${left.toFixed(1)}s`;
-
-    if (left <= 0) {
-
-      clearInterval(challengeTimer);
-
-      failChallenge();
-
-    }
-
-  }, 90);
-
+  const wordEntry = WORDS_DATA[wordDataIdx];
+  hebrewWordEl.textContent = wordEntry.he;
+  answerInputEl.value = "";
+  feedbackEl.textContent = "";
+  hintEl.textContent = "";
+  answerInputEl.focus();
+  hintBtn.disabled = false;
+  
+  challengeStartTime = performance.now();
+  timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`;
+  
+  clearInterval(challengeTimerInterval);
+  challengeTimerInterval = setInterval(() => {
+    const secondsElapsed = (performance.now() - challengeStartTime) / 1000;
+    const timeLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - secondsElapsed);
+    timerEl.textContent = `Tempo: ${timeLeft.toFixed(1)}s`;
+    if (timeLeft <= 0) {
+      clearInterval(challengeTimerInterval);
+      failChallenge(wordDataIdx); // Passa o índice original da palavra
+    }
+  }, 90);
+  challengeModal.classList.remove('hidden');
 }
 
-document.getElementById('hintBtn').addEventListener('click', function() {
-
-  if (challengeActive && !usedHint) {
-
-    let idx = wordPositions[currentWordIdx].idx;
-
-    document.getElementById('hint').textContent = WORDS[idx].dica || "Sem dica.";
-
-    usedHint = true;
-
-    this.disabled = true;
-
-  }
-
+hintBtn.addEventListener('click', function() {
+  if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) {
+    const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
+    hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica.";
+    usedHint = true;
+    this.disabled = true;
+  }
 });
 
-document.getElementById('answerForm').addEventListener('submit', function(e){
+answerForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!challengeActive || currentChallengeWordMapIndex === -1) return;
 
-  e.preventDefault();
+  const userAnswer = normalize(answerInputEl.value);
+  const mapElement = gameElementsOnMap[currentChallengeWordMapIndex];
+  const wordEntry = WORDS_DATA[mapElement.wordDataIndex];
+  
+  const isCorrect = wordEntry.pt.some(translation => normalize(translation) === userAnswer);
 
-  if (!challengeActive) return;
-
-  let answer = normalize(document.getElementById('answerInput').value);
-
-  let word = WORDS[wordPositions[currentWordIdx].idx];
-
-  let accepted = word.pt.some(t => normalize(t) === answer);
-
-  if (accepted) {
-
-    completeChallenge();
-
-  } else {
-
-    document.getElementById('feedback').textContent = "Tradução incorreta. Tente novamente!";
-
-  }
-
+  if (isCorrect) {
+    completeChallenge(mapElement.wordDataIndex); // Passa o índice original da palavra
+  } else {
+    feedbackEl.textContent = "Tradução incorreta. Tente novamente!";
+    answerInputEl.select(); // Seleciona o texto para facilitar nova tentativa
+  }
 });
 
-function completeChallenge() {
+function completeChallenge(wordDataIdx) { // wordDataIdx é o índice em WORDS_DATA
+  clearInterval(challengeTimerInterval);
+  const timeTaken = (performance.now() - challengeStartTime) / 1000;
+  const pointsEarned = Math.round(
+    usedHint ?
+    Math.max(10, 60 - 3.5 * timeTaken) :
+    Math.max(20, 100 - 5 * timeTaken)
+  );
+  points += pointsEarned;
+  wordsFoundCorrectly++; // Conta apenas acertos
+  
+  if(currentChallengeWordMapIndex !== -1) {
+      gameElementsOnMap[currentChallengeWordMapIndex].found = true; // Marca como coletado no mapa
+  }
 
-  let timeTaken = (performance.now() - challengeStartTime)/1000;
-
-  let pts = Math.round(
-
-    usedHint ?
-
-      Math.max(10, 60 - 3.5*timeTaken) :
-
-      Math.max(20, 100 - 5*timeTaken)
-
-  );
-
-  points += pts;
-
-  wordsFound++;
-
-  wordPositions[currentWordIdx].found = true;
-
-  updatePoints();
-
-  document.getElementById('feedback').textContent = usedHint
-
-    ? `Correto! +${pts} pts (com dica)`
-
-    : `Correto! +${pts} pts`;
-
-  setTimeout(()=>{
-
-    document.getElementById('modal').classList.add('hidden');
-
-    challengeActive = false;
-
-    if (wordsFound === wordPositions.length) {
-
-      endGameType = "win";
-
-      showEndModal();
-
-    }
-
-  }, 600);
-
-  clearInterval(challengeTimer);
-
+  updatePointsDisplay();
+  feedbackEl.textContent = usedHint ? `Correto! +${pointsEarned} pts (com dica)` : `Correto! +${pointsEarned} pts`;
+  
+  setTimeout(() => {
+    challengeModal.classList.add('hidden');
+    challengeActive = false;
+    checkWinCondition();
+  }, 800); // Tempo um pouco maior para ler o feedback
 }
 
-function failChallenge() {
+function failChallenge(wordDataIdx) { // wordDataIdx é o índice em WORDS_DATA
+  clearInterval(challengeTimerInterval);
+  feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`;
+  // A palavra não é marcada como "found" e não conta para wordsFoundCorrectly
+  // O jogador pode tentar novamente se colidir com ela.
+  // Se quiser que ela desapareça mesmo errando:
+  // if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true;
 
-  document.getElementById('feedback').textContent = `Tempo esgotado! Resposta: ${WORDS[wordPositions[currentWordIdx].idx].pt[0]}`;
-
-  setTimeout(()=>{
-
-    document.getElementById('modal').classList.add('hidden');
-
-    challengeActive = false;
-
-    wordsFound++;
-
-    wordPositions[currentWordIdx].found = true;
-
-    if (wordsFound === wordPositions.length) {
-
-      endGameType = "win";
-
-      showEndModal();
-
-    }
-
-  }, 1200);
-
-  clearInterval(challengeTimer);
-
+  setTimeout(() => {
+    challengeModal.classList.add('hidden');
+    challengeActive = false;
+    // Não chama checkWinCondition aqui, pois a palavra não foi coletada
+  }, 1500); // Tempo maior para ler a resposta
 }
 
-function showEndModal() {
-
-  document.getElementById('endModal').classList.remove('hidden');
-
-  if (endGameType==="win") {
-
-    document.getElementById('endTitle').innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>';
-
-    document.getElementById('endMsg').textContent = "Parabéns, você venceu!";
-
-  } else {
-
-    document.getElementById('endTitle').textContent = "Game Over";
-
-    document.getElementById('endMsg').textContent = "Tente novamente!";
-
-  }
-
+function checkWinCondition() {
+    if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) {
+        isGameOver = true;
+        gameOutcomeType = "win";
+        showEndGameModal();
+    }
 }
 
-
-
-// --- GAMELOOP ---
-
-function gameLoop() {
-
-  if (gameOver) return;
-
-  if (!challengeActive) {
-
-    updatePlayer();
-
-    updateCruzes();
-
-    checkWordCollision();
-
-    checkVilaoCollision();
-
-    checkCruzCollision();
-
-    brilho = Math.max(0, brilho-1);
-
-  }
-
-  drawWorld();
-
-  requestAnimationFrame(gameLoop);
-
+function showEndGameModal() {
+  endModal.classList.remove('hidden');
+  if (gameOutcomeType === "win") {
+    endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; // Mazal Tov!
+    endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`;
+  } else {
+    endTitleEl.textContent = "Game Over";
+    endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`;
+  }
 }
 
+// ======== Loop Principal do Jogo ========
+let lastFrameTime = 0;
+const DESIRED_FPS = 60;
+const MAX_FRAME_TIME_MS = 1000 / DESIRED_FPS;
 
+function gameLoop(timestamp) {
+  if (isGameOver) {
+    // Opcional: animação de game over ou tela final antes do modal
+    return;
+  }
 
-// --- CONTROLES ---
+  const deltaTime = timestamp - lastFrameTime;
 
-document.addEventListener('keydown', function(e){
+  // Limitar o game loop a DESIRED_FPS para consistência e evitar "espirais da morte" em hardwares lentos
+  // No entanto, requestAnimationFrame já tenta otimizar para a taxa de atualização do monitor.
+  // Uma forma mais simples de controle de tempo é garantir que a lógica de atualização
+  // seja baseada em deltaTime, mas a física aqui é baseada em "passos" fixos por frame.
 
-  if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) keys[e.code] = true;
+  if (!challengeActive) {
+    updatePlayerState();
+    updateProjectiles();
+    checkCollisions(); // Checa todas as colisões
+    if (playerGlowEffect > 0) playerGlowEffect--;
+  }
+  
+  drawGameWorld();
+  
+  lastFrameTime = timestamp;
+  requestAnimationFrame(gameLoop);
+}
 
-  if (e.code==="Space" && !challengeActive) fireCruz();
-
-  if (challengeActive && e.code === "Escape") {
-
-    document.getElementById('modal').classList.add('hidden');
-
-    challengeActive = false;
-
-    clearInterval(challengeTimer);
-
-  }
-
+// ======== Controles ========
+document.addEventListener('keydown', function(e) {
+  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") {
+    keys[e.code] = true;
+    if (!challengeActive) e.preventDefault(); // Evita scroll da página com as setas
+  }
+  if (e.code === "Space" && !challengeActive) {
+    e.preventDefault();
+    fireProjectile();
+  }
+  if (challengeActive && e.code === "Escape") {
+    challengeModal.classList.add('hidden');
+    challengeActive = false;
+    clearInterval(challengeTimerInterval);
+  }
 });
-
-document.addEventListener('keyup', function(e){
-
-  if (["ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.code)) keys[e.code] = false;
-
+document.addEventListener('keyup', function(e) {
+  if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") {
+    keys[e.code] = false;
+  }
 });
-
-
 
 // Controles Touch
+if (isMobileDevice()) {
+  const touchBtnLeft = document.getElementById('btnLeft');
+  const touchBtnRight = document.getElementById('btnRight');
+  const touchBtnUp = document.getElementById('btnUp');
+  const touchBtnFire = document.getElementById('btnFire');
 
-if (document.getElementById('btnLeft')) {
+  let touchMappings = [
+    { btn: touchBtnLeft, code: 'ArrowLeft' },
+    { btn: touchBtnRight, code: 'ArrowRight' },
+    { btn: touchBtnUp, code: 'ArrowUp' }
+  ];
 
-  let btns = [
+  touchMappings.forEach(({ btn, code }) => {
+    let pressTimer = null;
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); keys[code] = true;
+      // Para movimento contínuo enquanto pressionado (opcional, já que o game loop verifica keys)
+      // clearInterval(pressTimer); pressTimer = setInterval(()=>{ keys[code]=true; }, 50);
+    }, { passive: false });
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault(); keys[code] = false;
+      // clearInterval(pressTimer);
+    }, { passive: false });
+    btn.addEventListener('touchcancel', function(e) { keys[code] = false; /*clearInterval(pressTimer);*/ }, { passive: false });
+  });
 
-    {id: 'btnLeft', code: 'ArrowLeft'},
-
-    {id: 'btnRight', code: 'ArrowRight'},
-
-    {id: 'btnUp', code: 'ArrowUp'}
-
-  ];
-
-  btns.forEach(({id, code}) => {
-
-    let btn = document.getElementById(id); let timer;
-
-    btn.addEventListener('touchstart', function(e) {
-
-      e.preventDefault(); keys[code] = true; timer = setInterval(()=>{ keys[code]=true; }, 80);
-
-    }, {passive: false});
-
-    btn.addEventListener('touchend', function(e) {
-
-      e.preventDefault(); keys[code] = false; if (timer) clearInterval(timer);
-
-    }, {passive: false});
-
-    btn.addEventListener('touchcancel', function(e) { keys[code] = false; if (timer) clearInterval(timer); }, {passive: false});
-
-  });
-
-  // Botão de atirar
-
-  let btnFire = document.getElementById('btnFire');
-
-  btnFire.addEventListener('touchstart', function(e) {
-
-    e.preventDefault(); fireCruz();
-
-  }, {passive: false});
-
+  touchBtnFire.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (!challengeActive) fireProjectile();
+  }, { passive: false });
 }
 
 
+// ======== Ajuste do Canvas e Inicialização Automática ========
+function adjustGameCanvas() {
+  let newWidth = Math.min(window.innerWidth - 20, 900); // Adicionado margem
+  // Ajustar altura para mobile, considerando os botões de toque
+  let bottomMargin = isMobileDevice() ? 100 : 20; // Maior margem se mobile para controles
+  let newHeight = Math.max(320, Math.min(window.innerHeight - document.getElementById('scoreHud').offsetHeight - bottomMargin - 20, 500));
+  
+  gameCanvas.width = newWidth;
+  gameCanvas.height = newHeight;
 
-// --- INICIALIZAÇÃO ---
-
-function adjustCanvas() {
-
-  let ww = Math.min(window.innerWidth-10, 900);
-
-  let wh = Math.max(320, Math.min(window.innerHeight-100, 500));
-
-  canvas.width = ww; canvas.height = wh;
-
+  // Recalcular groundY e centralização do jogador se necessário após resize,
+  // ou redesenhar o mundo. Para simplificar, apenas redesenha.
+  if (typeof drawGameWorld === 'function' && player) { // Verifica se o jogo já iniciou
+      // Pode ser necessário reajustar a posição do jogador ou cameraX se o tamanho do canvas mudar drasticamente
+      player.x = gameCanvas.width / 2; // Mantém o jogador no novo centro horizontal da tela
+      groundY = gameCanvas.height * 0.80; // Ex: chão a 80% da altura do canvas
+      if(player.y + player.height > groundY) player.y = groundY - player.height; // Ajusta se estava abaixo do novo chão
+      drawGameWorld();
+  }
 }
 
-window.addEventListener('resize', adjustCanvas);
-
-adjustCanvas();
-
-
-
-setupMapElements();
-
-
+window.addEventListener('resize', adjustGameCanvas);
+// Chamada inicial para ajustar o canvas ao carregar a página
+adjustGameCanvas();
+// Não chama setupMapElements() globalmente aqui, ele é chamado dentro de initializeGame()
 
 </script>
+</body>
+</html>
