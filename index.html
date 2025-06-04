@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Sons Locais)</title>
+  <title>Jogo Hebraico Bíblico – Rodrigo Niskier (Correções)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono:400,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700&display=swap">
@@ -104,22 +104,22 @@ function normalize(str) { return str.toLowerCase().normalize('NFD').replace(/[\u
 
 // ======== Configurações de Áudio ========
 const gameSounds = {};
-const soundUrls = {
+const soundUrls = { // Caminhos relativos aos arquivos na mesma pasta do index.html
     background: "fundo.mp3",
-    jump: "pulo.mp3", // Por favor, confirme ou altere este nome de arquivo
+    jump: "pulo.mp3", // << PROFESSOR: Confirme o nome deste arquivo
     shoot: "ataque.mp3",
-    collectWord: "coletar_palavra.mp3", // Por favor, confirme ou altere (pode ser ataque.mp3)
+    collectWord: "ataque.mp3", // Usando ataque.mp3 conforme sua última indicação
     collectPower: "iad.mp3",
     playerHit: "ataque.mp3", 
-    vilaoDefeated: "fariseu.mp3",
-    uiClick: "uiclick.mp3" // Por favor, confirme ou altere este nome de arquivo
+    vilaoDefeated: "fariseu.mp3", // Assumindo .mp3
+    uiClick: "uiclick.mp3" // << PROFESSOR: Confirme o nome deste arquivo
 };
 
 let audioContext = null;
-let soundsFullyLoaded = false; // Flag para indicar se todos os sons foram pelo menos tentados carregar
+let soundsFullyLoaded = false; 
 
 function initAudioContext() {
-    if (audioContext) return; // Já inicializado
+    if (audioContext) return; 
     try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } catch (e) {
@@ -128,56 +128,63 @@ function initAudioContext() {
 }
 
 function loadSounds() {
-    if (soundsFullyLoaded) return; // Evita recarregar
+    if (soundsFullyLoaded) return Promise.resolve(); // Retorna uma promessa resolvida se já carregado
     console.log("Iniciando carregamento de sons...");
-    let soundsToAttemptLoad = Object.keys(soundUrls).length;
-    let attemptedLoadsCount = 0;
+    
+    const soundPromises = [];
 
     for (const key in soundUrls) {
         if (soundUrls[key]) {
-            gameSounds[key] = new Audio(soundUrls[key]);
-            gameSounds[key].preload = 'auto'; // Tenta pré-carregar
+            const audio = new Audio(); // Cria o Audio object aqui
+            gameSounds[key] = audio; // Armazena imediatamente
+            audio.src = soundUrls[key]; // Atribui o src
+            audio.preload = 'auto';
 
-            const soundLoaded = () => {
-                attemptedLoadsCount++;
-                // console.log(`Som ${key} pronto ou erro ao carregar.`);
-                if (attemptedLoadsCount === soundsToAttemptLoad) {
-                    soundsFullyLoaded = true;
-                    console.log("Tentativa de carregamento de todos os sons concluída.");
-                }
-            };
-            gameSounds[key].addEventListener('canplaythrough', soundLoaded, { once: true });
-            gameSounds[key].addEventListener('error', () => {
-                console.warn(`Erro ao carregar som: ${key} (${soundUrls[key]})`);
-                soundLoaded(); // Conta como tentativa mesmo em erro
-            }, { once: true });
+            const loadPromise = new Promise((resolveSound, rejectSound) => {
+                const onCanPlayThrough = () => {
+                    // console.log(`Som ${key} pronto.`);
+                    resolveSound(key); // Resolve com a chave do som
+                };
+                const onError = () => {
+                    console.warn(`Erro ao carregar som: ${key} (${soundUrls[key]})`);
+                    resolveSound(key); // Resolve mesmo em erro para não bloquear tudo
+                };
+                audio.addEventListener('canplaythrough', onCanPlayThrough, { once: true });
+                audio.addEventListener('error', onError, { once: true });
+                audio.load(); // Inicia o carregamento explícito
+            });
+            soundPromises.push(loadPromise);
             
             if (key === 'background') {
-                gameSounds[key].loop = true;
-                gameSounds[key].volume = 0.20; // Volume mais baixo para fundo
+                audio.loop = true;
+                audio.volume = 0.20; 
             } else {
-                gameSounds[key].volume = 0.5; // Volume padrão para efeitos
+                audio.volume = 0.5; 
             }
-            gameSounds[key].load(); // Inicia o carregamento explícito
         } else {
             console.warn(`URL do som '${key}' não definida.`);
-            attemptedLoadsCount++; // Conta como tentativa
         }
     }
-     if (soundsToAttemptLoad === 0) soundsFullyLoaded = true; // Caso nenhuma URL seja definida
+    return Promise.all(soundPromises).then(() => {
+        soundsFullyLoaded = true;
+        console.log("Tentativa de carregamento de todos os sons concluída.");
+    }).catch(error => {
+        console.error("Erro geral no carregamento de um ou mais sons:", error);
+        soundsFullyLoaded = true; // Permite que o jogo continue mesmo com falha em algum som
+    });
 }
 
 
 function playSound(soundName, volume = -1) {
     if (!audioContext && (window.AudioContext || window.webkitAudioContext)) {
-        initAudioContext(); // Tenta iniciar se ainda não foi
+        initAudioContext(); 
     }
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume().catch(e => console.warn("AudioContext resume falhou:", e));
     }
 
     const sound = gameSounds[soundName];
-    if (sound && sound.src) { // Verifica se o Audio object existe e tem uma source
+    if (sound && sound.src) { 
         try {
             sound.currentTime = 0;
             const originalVolume = volume !== -1 ? volume : (soundName === 'background' ? 0.20 : 0.5);
@@ -185,19 +192,13 @@ function playSound(soundName, volume = -1) {
             
             const playPromise = sound.play();
             if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    // console.warn(`Não foi possível tocar o som "${soundName}": `, error);
-                    // Silenciosamente ignora erros de autoplay se o contexto ainda não está liberado
-                });
+                playPromise.catch(error => { /* console.warn(`Play sound "${soundName}" error: `, error); */ });
             }
         } catch (e) {
             console.warn(`Exceção ao tentar tocar som "${soundName}": `, e);
         }
-    } else {
-        // console.warn(`Som "${soundName}" não encontrado ou não carregado.`);
     }
 }
-
 
 // ======== Configurações e Estado do Jogo (Mantido) ========
 let selectedChar = 0; let playerName = ""; let usedHint = false; const charOptionBtns = [char1Btn, char2Btn];
@@ -212,16 +213,20 @@ charOptionBtns.forEach((btn, idx) => { btn.addEventListener('click', () => { pla
 usernameInput.addEventListener('input', function() { playerName = this.value.trim(); updatePlayButtonState(); });
 playBtn.addEventListener('click', () => { 
     playSound('uiClick'); 
-    initAudioContext(); // Tenta iniciar/resumir o AudioContext com a primeira interação real
-    if (!soundsFullyLoaded) loadSounds(); // Carrega os sons se ainda não foram
+    initAudioContext(); 
+    if (!soundsFullyLoaded) {
+        loadSounds().then(() => { // Agora loadSounds retorna uma promessa
+            console.log("Sons prontos (ou tentativa falhou) após clique em Play.");
+        });
+    }
     startScreen.style.display = "none"; 
     commandScreen.style.display = "flex"; 
 });
 okBtn.addEventListener('click', () => {
   playSound('uiClick');
-  if (audioContext && audioContext.state === 'suspended') { // Garante que o contexto de áudio esteja ativo
+  if (audioContext && audioContext.state === 'suspended') { 
       audioContext.resume().then(() => {
-          playSound('background'); // Toca o som de fundo após o contexto ser resumido
+          playSound('background'); 
       }).catch(e => console.warn("Resumir AudioContext falhou:", e));
   } else if (audioContext) {
       playSound('background');
@@ -237,112 +242,105 @@ okBtn.addEventListener('click', () => {
     initializeGame();
   } catch (error) {
     console.error("Erro fatal ao inicializar o jogo:", error);
-    // Opcional: Mostrar uma mensagem de erro para o usuário
-    alert("Ocorreu um erro ao carregar o jogo. Por favor, verifique o console para detalhes (F12).");
+    alert("Ocorreu um erro ao carregar o jogo. Verifique o console (F12).");
   }
 });
 
 // ======== Configuração do Jogo e Elementos do Mapa (Mantida) ========
-function setupMapElements() {
-    gameElementsOnMap = []; wordsToWin = 0; viloesToWin = 0;
-    const normalWordsPool = WORDS_DATA.filter(w => !w.power).sort(() => 0.5 - Math.random());
-    const yadWordEntry = WORDS_DATA.find(w => w.power);
-    const yadWordDataIndex = yadWordEntry ? WORDS_DATA.indexOf(yadWordEntry) : -1;
-    let normalWordsPlacedInCycle = 0; let totalNormalWordsEverPlaced = 0; 
-    const MIN_NORMAL_WORDS_TARGET = 30; let currentNormalWordPoolIndex = 0;
-    let isFirstYadPlaced = false; let isFirstVilaoPlaced = false;
-    while (currentNormalWordPoolIndex < MIN_NORMAL_WORDS_TARGET || gameElementsOnMap.length < MIN_NORMAL_WORDS_TARGET + 5) {
-        let elementPushedThisTurn = false;
-        if (yadWordDataIndex !== -1) {
-            if (!isFirstYadPlaced && totalNormalWordsEverPlaced === 3) { 
-                gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
-                isFirstYadPlaced = true; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
-            } else if (isFirstYadPlaced && normalWordsPlacedInCycle >= 7) {
-                gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry });
-                normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
-            }
-        }
-        if (!elementPushedThisTurn) {
-            if (!isFirstVilaoPlaced && totalNormalWordsEverPlaced >= 5) { 
-                gameElementsOnMap.push({ type: "vilao" }); viloesToWin++;
-                isFirstVilaoPlaced = true; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
-            } else if (isFirstVilaoPlaced && normalWordsPlacedInCycle >= 5) {
-                gameElementsOnMap.push({ type: "vilao" }); viloesToWin++;
-                normalWordsPlacedInCycle = 0; elementPushedThisTurn = true;
-            }
-        }
-        if (!elementPushedThisTurn && currentNormalWordPoolIndex < normalWordsPool.length) {
-            const wordData = normalWordsPool[currentNormalWordPoolIndex]; const globalIdx = WORDS_DATA.indexOf(wordData);
-            gameElementsOnMap.push({ type: "word", wordDataIndex: globalIdx, wordObj: wordData });
-            wordsToWin++; normalWordsPlacedInCycle++; totalNormalWordsEverPlaced++; currentNormalWordPoolIndex++; elementPushedThisTurn = true;
-        }
-        if (!elementPushedThisTurn && currentNormalWordPoolIndex >= normalWordsPool.length) { break; }
-    }
-    if (viloesToWin === 0 && totalNormalWordsEverPlaced >= 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length === 0) { gameElementsOnMap.push({ type: "vilao" }); viloesToWin++; }
-}
-
+function setupMapElements() { /* ... (código mantido) ... */ gameElementsOnMap = []; wordsToWin = 0; viloesToWin = 0; const normalWordsPool = WORDS_DATA.filter(w => !w.power).sort(() => 0.5 - Math.random()); const yadWordEntry = WORDS_DATA.find(w => w.power); const yadWordDataIndex = yadWordEntry ? WORDS_DATA.indexOf(yadWordEntry) : -1; let normalWordsPlacedInCycle = 0; let totalNormalWordsEverPlaced = 0;  const MIN_NORMAL_WORDS_TARGET = 30; let currentNormalWordPoolIndex = 0; let isFirstYadPlaced = false; let isFirstVilaoPlaced = false; while (currentNormalWordPoolIndex < MIN_NORMAL_WORDS_TARGET || gameElementsOnMap.length < MIN_NORMAL_WORDS_TARGET + 5) { let elementPushedThisTurn = false; if (yadWordDataIndex !== -1) { if (!isFirstYadPlaced && totalNormalWordsEverPlaced === 3) {  gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry }); isFirstYadPlaced = true; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true; } else if (isFirstYadPlaced && normalWordsPlacedInCycle >= 7) { gameElementsOnMap.push({ type: "power", wordDataIndex: yadWordDataIndex, wordObj: yadWordEntry }); normalWordsPlacedInCycle = 0; elementPushedThisTurn = true; } } if (!elementPushedThisTurn) { if (!isFirstVilaoPlaced && totalNormalWordsEverPlaced >= 5) {  gameElementsOnMap.push({ type: "vilao" }); viloesToWin++; isFirstVilaoPlaced = true; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true; } else if (isFirstVilaoPlaced && normalWordsPlacedInCycle >= 5) { gameElementsOnMap.push({ type: "vilao" }); viloesToWin++; normalWordsPlacedInCycle = 0; elementPushedThisTurn = true; } } if (!elementPushedThisTurn && currentNormalWordPoolIndex < normalWordsPool.length) { const wordData = normalWordsPool[currentNormalWordPoolIndex]; const globalIdx = WORDS_DATA.indexOf(wordData); gameElementsOnMap.push({ type: "word", wordDataIndex: globalIdx, wordObj: wordData }); wordsToWin++; normalWordsPlacedInCycle++; totalNormalWordsEverPlaced++; currentNormalWordPoolIndex++; elementPushedThisTurn = true; } if (!elementPushedThisTurn && currentNormalWordPoolIndex >= normalWordsPool.length) { break; } } if (viloesToWin === 0 && totalNormalWordsEverPlaced >= 5 && gameElementsOnMap.filter(el=>el.type==="vilao").length === 0) { gameElementsOnMap.push({ type: "vilao" }); viloesToWin++; }}
 
 // ======== Inicialização do Jogo ========
 function initializeGame() {
+  // Inicializa variáveis de estado do jogo ANTES de qualquer coisa que possa falhar
+  keys = {}; // Inicializa keys aqui para evitar erro nos listeners de evento
+  projectiles = []; // Inicializa projectiles aqui
+
   player = {
     x: gameCanvas.width / 2.5, y: 300, width: 38, height: 70,
     vx: 0, vy: 0, speed: 4.5, onGround: true, gravity: 0.6, jumpPower: -11.5, direction: 1,
     worldX: gameCanvas.width / 2.5, isHit: false, hitShakeDuration: 0
   };
   cameraX = 0; groundY = gameCanvas.height * 0.82;
-  setupMapElements(); positionGameElements();
   currentChallengeWordMapIndex = -1; challengeActive = false; challengeStartTime = 0;
   points = 200; wordsFoundCorrectly = 0; viloesDefeated = 0;
-  keys = {}; vidas = 3; playerGlowEffect = 0; projectiles = [];
+  vidas = 3; playerGlowEffect = 0; 
   isGameOver = false; gameOutcomeType = "";
+
   updateLivesDisplay(); updatePointsDisplay();
   
-  loadCharacterImages().then(() => {
-    // Sons já devem ter sido iniciados o carregamento pelo clique no playBtn ou okBtn
-    drawGameWorld(); 
-    requestAnimationFrame(gameLoop); // Mover gameLoop para aqui garante que tudo está pronto
-  }).catch(error => {
-    console.error("Erro ao carregar imagens do personagem:", error);
-    alert("Erro ao carregar imagens. O jogo não pode iniciar.");
-  });
+  // Encadear promessas para carregamento de assets
+  loadCharacterImages()
+    .then(() => {
+        console.log("Imagens de personagem carregadas.");
+        // A tentativa de carregamento de sons já foi iniciada pelo clique no botão Play/OK
+        // Aqui podemos apenas verificar ou esperar por 'soundsFullyLoaded' se necessário,
+        // mas o jogo pode começar e os sons tocarão quando estiverem prontos.
+        setupMapElements(); 
+        positionGameElements(); // Agora depende de loadedCharImages
+        drawGameWorld(); 
+        requestAnimationFrame(gameLoop);
+    })
+    .catch(error => {
+        console.error("Erro fatal durante o carregamento de imagens:", error);
+        alert("Erro crítico: Falha ao carregar imagens essenciais. O jogo não pode continuar.");
+        // Impedir que o jogo tente rodar se imagens essenciais falharam
+        isGameOver = true; // Impede o gameLoop de rodar
+    });
 }
+
 function loadCharacterImages() { 
-  return new Promise((resolve, reject) => { // Adicionado reject
+  return new Promise((resolve, reject) => {
     loadedCharImages = []; let imagesToLoad = charImgsPaths.length;
     if (imagesToLoad === 0) { resolve(); return; }
     let loadedCount = 0;
-    let errorOccurred = false;
+    let firstError = null; // Armazena o primeiro erro ocorrido
 
     charImgsPaths.forEach((src, i) => {
-      if (errorOccurred) return; // Se um erro já ocorreu, não tenta carregar mais
-      const img = new Image(); img.src = src;
+      const img = new Image(); 
+      // Definir src DEPOIS de adicionar listeners para cobrir todos os casos (inclusive cache)
       img.onload = () => {
-        if (errorOccurred) return;
-        loadedCharImages[i] = img; loadedCount++; 
+        if (firstError) return; // Se um erro já ocorreu, não processa mais
+        loadedCharImages[i] = img; 
+        loadedCount++; 
         if (loadedCount === imagesToLoad) resolve(); 
       };
       img.onerror = () => { 
-        if (errorOccurred) return;
-        errorOccurred = true;
-        console.error(`Falha fatal ao carregar imagem essencial: ${src}`); 
-        reject(new Error(`Falha ao carregar ${src}`)); // Rejeita a promessa
+        console.error(`Falha ao carregar imagem: ${src}`); 
+        loadedCharImages[i] = null; // Marcar como nula para verificações posteriores
+        loadedCount++; // Conta como "tentativa"
+        if (!firstError) firstError = new Error(`Falha ao carregar ${src}`); // Armazena o primeiro erro
+        if (loadedCount === imagesToLoad) { // Se todas as tentativas foram feitas
+             // Mesmo com erro, podemos resolver se algumas imagens não forem críticas
+             // Mas para personagem3.png (índice 2), é crítico.
+            if (i === 2 && !loadedCharImages[2]) { // Se a imagem do vilão falhou
+                reject(firstError || new Error("Imagem crítica do vilão não carregou."));
+            } else {
+                 resolve(); // Resolve se outras imagens falharem mas as críticas carregaram
+            }
+        }
       };
+      img.src = src; // Atribui src por último
     });
   });
 }
+
 function positionGameElements() { 
   let currentMapX = 400; 
   gameElementsOnMap.forEach(element => {
     element.x = currentMapX; element.found = false; element.collidedThisFrame = false;
     if (element.type === "vilao") {
-        const vilaoImg = loadedCharImages[2]; 
-        if (vilaoImg && vilaoImg.naturalWidth > 0) {
+        // Tenta buscar a imagem do vilão (personagem3.png)
+        const vilaoImg = loadedCharImages && loadedCharImages[2]; // charImgsPaths[2] é 'personagem3.png'
+        
+        if (vilaoImg && vilaoImg.complete && vilaoImg.naturalWidth > 0) { // Verifica se a imagem carregou e tem dimensões
             const aspectRatio = vilaoImg.naturalWidth / vilaoImg.naturalHeight;
             element.height = player.height * 1.25; 
             element.width = element.height * aspectRatio;
         } else { 
-            element.height = player.height * 1.2; element.width = player.width * 1.1;
-            console.warn("Imagem do vilão não carregada, usando tamanhos fallback.");
+            // Fallback se a imagem do vilão não carregou ou não tem dimensões
+            console.warn("Imagem do vilão (personagem3.png) não carregada ou inválida. Usando tamanhos fallback.");
+            element.height = player.height * 1.2; 
+            element.width = player.width * 1.1; 
         }
         element.y = groundY - element.height; 
         element.alive = true; element.cooldown = 0;
@@ -357,7 +355,7 @@ function positionGameElements() {
   worldLength = currentMapX + gameCanvas.width; 
 }
 
-// ======== Funções de Desenho no Canvas ========
+// ======== Funções de Desenho no Canvas (Aparência do vilão ajustada) ========
 function drawGameBackground() { /* ... (mantido com fundo fixo) ... */  if (bgGameImage.complete && bgGameImage.naturalWidth > 0) { ctx.drawImage(bgGameImage, 0, 0, gameCanvas.width, gameCanvas.height); } else { ctx.fillStyle = "#7dd3fc"; ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height); } }
 function drawPlayerCharacter() { /* ... (mantido com tremor e brilho) ... */  ctx.save(); let playerRenderX = player.x; let playerRenderY = player.y; if (player.isHit && player.hitShakeDuration > 0) { playerRenderX += (Math.random() - 0.5) * 8; playerRenderY += (Math.random() - 0.5) * 6; } const playerScreenY = playerRenderY + player.height / 2;  ctx.translate(playerRenderX, playerScreenY); ctx.scale(player.direction, 1); if (playerGlowEffect > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, 0.3 + (playerGlowEffect / 180) * 0.7);  const baseRadius = player.width * 0.8; for (let i = 0; i < 8; i++) { ctx.beginPath(); const angle = (i / 8) * (Math.PI * 2) + (Date.now() * 0.002); const radius = baseRadius + 5 * Math.sin(angle * 2); ctx.arc(0, 0, radius, 0, 2 * Math.PI); ctx.strokeStyle = `rgba(255, 223, 100, ${0.4 + Math.random()*0.2})`; ctx.lineWidth = 3 + Math.random() * 3; ctx.stroke(); } ctx.restore(); } const pWidth = player.width; const pHeight = player.height; ctx.fillStyle = "#191d25"; ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5; ctx.fillRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35); ctx.strokeRect(-pWidth*0.25 - pWidth*0.1, pHeight*0.15, pWidth*0.2, pHeight*0.35); ctx.fillRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35); ctx.strokeRect(pWidth*0.05, pHeight*0.15, pWidth*0.2, pHeight*0.35); ctx.fillStyle = "#111"; ctx.fillRect(-pWidth*0.35, pHeight*0.45, pWidth*0.3, pWidth*0.15); ctx.fillRect(pWidth*0.05, pHeight*0.45, pWidth*0.3, pWidth*0.15);  ctx.fillStyle = "#273262"; ctx.strokeStyle = "#182042";  ctx.beginPath(); ctx.moveTo(-pWidth*0.4, -pHeight*0.3); ctx.lineTo(pWidth*0.4, -pHeight*0.3); ctx.lineTo(pWidth*0.3, pHeight*0.2); ctx.lineTo(-pWidth*0.3, pHeight*0.2); ctx.closePath(); ctx.fill();  ctx.stroke(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-pWidth*0.15, -pHeight*0.3); ctx.lineTo(pWidth*0.15, -pHeight*0.3); ctx.lineTo(pWidth*0.15, -pHeight*0.05); ctx.lineTo(-pWidth*0.15, -pHeight*0.05); ctx.closePath(); ctx.fill(); ctx.fillStyle = "#be2323"; ctx.beginPath(); ctx.arc(0, -pHeight*0.25, pWidth*0.08, 0, 2 * Math.PI); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, -pHeight*0.25 + pWidth*0.08); ctx.lineTo(-pWidth*0.1, pHeight*0.05); ctx.lineTo(pWidth*0.1, pHeight*0.05); ctx.closePath(); ctx.fill(); ctx.fillStyle = "#273262";  ctx.beginPath(); ctx.moveTo(-pWidth*0.4, -pHeight*0.25); ctx.lineTo(-pWidth*0.55, pHeight*0.05); ctx.lineTo(-pWidth*0.45, pHeight*0.25); ctx.lineTo(-pWidth*0.3, pHeight*0.15); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(pWidth*0.4, -pHeight*0.25); ctx.lineTo(pWidth*0.55, pHeight*0.05); ctx.lineTo(pWidth*0.45, pHeight*0.25); ctx.lineTo(pWidth*0.3, pHeight*0.15); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#f8e6d4"; ctx.beginPath(); ctx.arc(-pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(pWidth*0.45, pHeight*0.25, pWidth*0.1, 0, 2*Math.PI); ctx.fill(); const headRadius = pWidth * 0.35; const headYOffset = -pHeight * 0.35; ctx.beginPath(); ctx.arc(0, headYOffset, headRadius, 0, 2 * Math.PI); ctx.closePath(); ctx.save(); ctx.clip(); const playerImage = loadedCharImages && loadedCharImages[selectedChar - 1]; if (playerImage) { ctx.drawImage(playerImage, -headRadius, headYOffset - headRadius, headRadius * 2, headRadius * 2); } else { ctx.fillStyle = "#f8e6d4"; ctx.fill(); } ctx.restore(); ctx.strokeStyle = "#333"; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();  }
 function drawGameGround() { /* ... (mantido sem as pedrinhas e com nome) ... */  ctx.fillStyle = "#222b3e"; ctx.fillRect(0, groundY, gameCanvas.width, gameCanvas.height - groundY); ctx.fillStyle = "#495980"; ctx.fillRect(0, groundY + 20, gameCanvas.width, gameCanvas.height - groundY - 20); ctx.save(); ctx.font = "bold 16px 'JetBrains Mono', monospace"; ctx.fillStyle = "rgba(200, 200, 220, 0.3)"; ctx.textAlign = "center"; const nameYPos = groundY + gameCanvas.height * 0.12; const nameWidth = ctx.measureText("Rodrigo Niskier").width + 150;  const numNameRepeats = Math.ceil(gameCanvas.width / nameWidth) + 2; for (let i = 0; i < numNameRepeats; i++) { let nameX = (i * nameWidth) - (cameraX * 0.95 % nameWidth); if (nameX + nameWidth < 0) nameX += numNameRepeats * nameWidth; ctx.fillText("Rodrigo Niskier", nameX + nameWidth/2 - ctx.measureText("Rodrigo Niskier").width/2 , nameYPos); } ctx.restore(); }
@@ -368,7 +366,7 @@ function drawMapElements() {
         if (element.isAscending && element.currentAlpha <= 0) return; 
     } else if ((element.type === "word" || element.type === "power") && element.found) { return; }
     const screenX = worldToScreenX(element.x); const elementVisualWidth = element.width; 
-    if (screenX < -elementVisualWidth || screenX > gameCanvas.width + elementVisualWidth) return;
+    if (screenX < -elementVisualWidth - 50 || screenX > gameCanvas.width + elementVisualWidth + 50) return; // Culling mais generoso
     ctx.save();
     if (element.isAscending) { ctx.globalAlpha = Math.max(0, element.currentAlpha); }
     if (element.type === "word" || element.type === "power") {
@@ -379,128 +377,77 @@ function drawMapElements() {
       ctx.fillStyle = element.type === "power" ? "#ffe34d" : "#fbbf24";
       ctx.fillText(WORDS_DATA[element.wordDataIndex].he, screenX, element.y + element.height/2);
     } else if (element.type === "vilao") {
-        const vilaoImage = loadedCharImages[2]; // personagem3.png
+        const vilaoImage = loadedCharImages && loadedCharImages[2]; // personagem3.png
         if (vilaoImage && vilaoImage.complete && vilaoImage.naturalWidth > 0) {
             const drawX = screenX - element.width / 2; 
-            const drawY = element.y;
+            const drawY = element.y; // y é o topo do vilão
             ctx.drawImage(vilaoImage, drawX, drawY, element.width, element.height);
         } else { 
+            // Fallback visual se a imagem do vilão não carregou
             ctx.fillStyle = "#502020"; 
             ctx.fillRect(screenX - element.width / 2, element.y, element.width, element.height);
+            ctx.strokeStyle = "black"; ctx.strokeRect(screenX - element.width / 2, element.y, element.width, element.height);
+            // console.log("Desenhando fallback para vilão em:", screenX, element.y);
         }
     }
     ctx.restore();
   });
 }
 function drawProjectiles() { /* ... (mantido) ... */  projectiles.forEach(proj => { if (!proj.active) return; const screenX = worldToScreenX(proj.x); if (screenX < -20 || screenX > gameCanvas.width + 20) { proj.active = false; return; } ctx.save(); ctx.translate(screenX, proj.y); ctx.rotate(proj.dir * Date.now() * 0.0015);  ctx.globalAlpha = 0.95; ctx.lineWidth = 5; ctx.strokeStyle = "#fff078"; ctx.shadowColor = "#ffe469"; ctx.shadowBlur = 10; ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.moveTo(0,-12); ctx.lineTo(0,12); ctx.stroke(); ctx.lineWidth = 2.5; ctx.strokeStyle = "#ffffff"; ctx.shadowBlur = 0;  ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(7,0); ctx.moveTo(0,-11); ctx.lineTo(0,11); ctx.stroke(); ctx.restore(); }); }
-function drawGameWorld() { /* ... (mantido) ... */  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height); drawGameBackground(); drawGameGround(); drawMapElements(); drawProjectiles(); drawPlayerCharacter(); }
+function drawGameWorld() { if (!ctx) return; ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height); drawGameBackground(); drawGameGround(); drawMapElements(); drawProjectiles(); if (player) drawPlayerCharacter(); }
+
 
 // ======== Coordenadas e Movimentação do Mundo (Mantido) ========
 function worldToScreenX(worldXCoord) { return worldXCoord - cameraX; }
 function getPlayerWorldX() { return player.worldX; }
 
 // ======== Lógica de Atualização do Jogo ========
-function updatePlayerState() { /* ... (lógica de movimento e tremor mantida com som de pulo) ... */
-  player.vx = 0; 
-  let targetPlayerScreenX = gameCanvas.width / 2.5; 
-  if (keys["ArrowUp"] && player.onGround) { playSound('jump'); player.vy = player.jumpPower; player.onGround = false; }
-  if (keys["ArrowLeft"])  { player.worldX -= player.speed; player.direction = -1; }
-  if (keys["ArrowRight"]) { player.worldX += player.speed; player.direction = 1; }
-  player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2));
-  cameraX = player.worldX - targetPlayerScreenX; cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width));
-  player.x = player.worldX - cameraX; 
-  player.vy += player.gravity; player.y += player.vy;
-  if (player.y + player.height >= groundY) { player.y = groundY - player.height; player.vy = 0; player.onGround = true; }
-  if (player.y < 0) { player.y = 0; player.vy = 0; }
-  if (player.isHit && player.hitShakeDuration > 0) { player.hitShakeDuration--; } else if (player.isHit && player.hitShakeDuration <= 0) { player.isHit = false; }
-}
-function updateViloesAnimation() { /* ... (mantido) ... */ gameElementsOnMap.forEach(element => { if (element.type === "vilao" && element.isAscending && element.alive) { element.y += element.ascendSpeedY; element.currentAlpha -= 0.025; if (element.currentAlpha <= 0 || element.y < -element.height * 2) { element.isAscending = false; element.alive = false; } } });}
-function checkCollisions() { /* ... (com sons integrados) ... */
-  if (challengeActive) return;
-  gameElementsOnMap.forEach(el => el.collidedThisFrame = false);
-  const playerRect = { x: getPlayerWorldX() - player.width / 2, y: player.y, width: player.width, height: player.height };
-  gameElementsOnMap.forEach((element, mapIndex) => {
-    if (element.collidedThisFrame) return;
-    if (element.type === "vilao" && (!element.alive || element.isAscending)) return;
-    if ((element.type === "word" || element.type === "power") && element.found) return;
-    const elRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height };
-    if (playerRect.x < elRect.x + elRect.width && playerRect.x + playerRect.width > elRect.x &&
-        playerRect.y < elRect.y + elRect.height && playerRect.y + playerRect.height > elRect.y) {
-      element.collidedThisFrame = true;
-      if (element.type === "power") { playSound('collectPower'); points += 100; playerGlowEffect = 180; updatePointsDisplay(); element.found = true; } 
-      else if (element.type === "word") { currentChallengeWordMapIndex = mapIndex; triggerChallengeModal(element.wordDataIndex); } 
-      else if (element.type === "vilao") { if (element.cooldown <= 0) { playSound('playerHit'); points -= 75; updatePointsDisplay(); element.cooldown = 90; playerGlowEffect = 0; player.isHit = true; player.hitShakeDuration = 15; if (points < 0 && vidas > 0) { loseLife(); if (vidas > 0) points = 50; } else if (vidas === 0 && points < 0) { loseLife(); } } }
-    }
-    if (element.type === "vilao" && element.cooldown > 0) element.cooldown--;
-  });
-  projectiles.forEach(proj => {
-    if (!proj.active) return;
-    const projRect = { x: proj.x - 7, y: proj.y - 11, width: 14, height: 22 };
-    gameElementsOnMap.forEach(element => { 
-      if (element.type === "vilao" && element.alive && !element.isAscending && !element.collidedThisFrameProjectile) { 
-        const vilaoRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height };
-        if (projRect.x < vilaoRect.x + vilaoRect.width && projRect.x + projRect.width > vilaoRect.x &&
-            projRect.y < vilaoRect.y + vilaoRect.height && projRect.y + projRect.height > vilaoRect.y) {
-          playSound('vilaoDefeated'); element.collidedThisFrameProjectile = true; element.isAscending = true; proj.active = false; viloesDefeated++; points += 50; updatePointsDisplay(); checkWinCondition();
-        }
-      }
-    });
-    gameElementsOnMap.forEach(el => { if(el.type === "vilao") el.collidedThisFrameProjectile = false; });
-  });
-}
+function updatePlayerState() { if (!player) return; /* ... (lógica de movimento e tremor mantida com som de pulo) ... */ player.vx = 0;  let targetPlayerScreenX = gameCanvas.width / 2.5;  if (keys["ArrowUp"] && player.onGround) { playSound('jump'); player.vy = player.jumpPower; player.onGround = false; } if (keys["ArrowLeft"])  { player.worldX -= player.speed; player.direction = -1; } if (keys["ArrowRight"]) { player.worldX += player.speed; player.direction = 1; } player.worldX = Math.max(player.width / 2, Math.min(player.worldX, worldLength - player.width / 2)); cameraX = player.worldX - targetPlayerScreenX; cameraX = Math.max(0, Math.min(cameraX, worldLength - gameCanvas.width)); player.x = player.worldX - cameraX;  player.vy += player.gravity; player.y += player.vy; if (player.y + player.height >= groundY) { player.y = groundY - player.height; player.vy = 0; player.onGround = true; } if (player.y < 0) { player.y = 0; player.vy = 0; } if (player.isHit && player.hitShakeDuration > 0) { player.hitShakeDuration--; } else if (player.isHit && player.hitShakeDuration <= 0) { player.isHit = false; } }
+function updateViloesAnimation() { if (!gameElementsOnMap) return; /* ... (mantido) ... */ gameElementsOnMap.forEach(element => { if (element.type === "vilao" && element.isAscending && element.alive) { element.y += element.ascendSpeedY; element.currentAlpha -= 0.025; if (element.currentAlpha <= 0 || element.y < -element.height * 2) { element.isAscending = false; element.alive = false; } } });}
+function checkCollisions() { if (!player || !gameElementsOnMap || challengeActive) return; /* ... (com sons integrados) ... */ gameElementsOnMap.forEach(el => el.collidedThisFrame = false); const playerRect = { x: getPlayerWorldX() - player.width / 2, y: player.y, width: player.width, height: player.height }; gameElementsOnMap.forEach((element, mapIndex) => { if (element.collidedThisFrame) return; if (element.type === "vilao" && (!element.alive || element.isAscending)) return; if ((element.type === "word" || element.type === "power") && element.found) return; const elRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height }; if (playerRect.x < elRect.x + elRect.width && playerRect.x + playerRect.width > elRect.x && playerRect.y < elRect.y + elRect.height && playerRect.y + playerRect.height > elRect.y) { element.collidedThisFrame = true; if (element.type === "power") { playSound('collectPower'); points += 100; playerGlowEffect = 180; updatePointsDisplay(); element.found = true; }  else if (element.type === "word") { currentChallengeWordMapIndex = mapIndex; triggerChallengeModal(element.wordDataIndex); }  else if (element.type === "vilao") { if (element.cooldown <= 0) { playSound('playerHit'); points -= 75; updatePointsDisplay(); element.cooldown = 90; playerGlowEffect = 0; player.isHit = true; player.hitShakeDuration = 15; if (points < 0 && vidas > 0) { loseLife(); if (vidas > 0) points = 50; } else if (vidas === 0 && points < 0) { loseLife(); } } } } if (element.type === "vilao" && element.cooldown > 0) element.cooldown--; }); projectiles.forEach(proj => { if (!proj.active) return; const projRect = { x: proj.x - 7, y: proj.y - 11, width: 14, height: 22 }; gameElementsOnMap.forEach(element => {  if (element.type === "vilao" && element.alive && !element.isAscending && !element.collidedThisFrameProjectile) {  const vilaoRect = { x: element.x - element.width / 2, y: element.y, width: element.width, height: element.height }; if (projRect.x < vilaoRect.x + vilaoRect.width && projRect.x + projRect.width > vilaoRect.x && projRect.y < vilaoRect.y + vilaoRect.height && projRect.y + projRect.height > vilaoRect.y) { playSound('vilaoDefeated'); element.collidedThisFrameProjectile = true; element.isAscending = true; proj.active = false; viloesDefeated++; points += 50; updatePointsDisplay(); checkWinCondition(); } } }); gameElementsOnMap.forEach(el => { if(el.type === "vilao") el.collidedThisFrameProjectile = false; }); }); }
 
 function updatePointsDisplay() { scoreValueEl.textContent = Math.max(0, points); }
 function loseLife() { vidas--; updateLivesDisplay(); if (vidas > 0) { player.worldX = Math.max(player.width / 2, player.worldX - 300); player.y = groundY - player.height - 200; player.vy = 0; } else { isGameOver = true; gameOutcomeType = "over"; showEndGameModal(); } }
 function updateLivesDisplay() { livesEl.innerHTML = Array(vidas).fill('<span class="lives-heart">♥</span>').join('');}
-function fireProjectile() { const cost = 15; if (points < cost && projectiles.length > 2) return; if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return; playSound('shoot'); projectiles.push({ x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)), y: player.y + player.height * 0.4, vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now() }); if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay(); }
-function updateProjectiles() { projectiles = projectiles.filter(p => p.active); projectiles.forEach(p => { p.x += p.vx; if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false; });}
+function fireProjectile() { if (!player) return; const cost = 15; if (points < cost && projectiles.length > 2) return; if ((points < cost && vidas > 0) || (vidas === 0 && points < cost)) return; playSound('shoot'); projectiles.push({ x: getPlayerWorldX() + (player.direction * (player.width / 2 + 10)), y: player.y + player.height * 0.4, vx: player.direction * 12, dir: player.direction, active: true, creationTime: Date.now() }); if (vidas > 0 || points >= cost) points -= cost; updatePointsDisplay(); }
+function updateProjectiles() { if (!projectiles) return; projectiles = projectiles.filter(p => p.active); projectiles.forEach(p => { p.x += p.vx; if (p.x < cameraX - 100 || p.x > cameraX + gameCanvas.width + 100 || Date.now() - p.creationTime > 2500) p.active = false; });}
 
 // ======== Lógica do Desafio de Palavras (com som de acerto) ========
 function triggerChallengeModal(wordDataIdx) { challengeActive = true; usedHint = false; const wordEntry = WORDS_DATA[wordDataIdx]; hebrewWordEl.textContent = wordEntry.he; answerInputEl.value = ""; feedbackEl.textContent = ""; hintEl.textContent = ""; answerInputEl.focus(); hintBtn.disabled = false; challengeStartTime = performance.now(); timerEl.textContent = `Tempo: ${CHALLENGE_TIMEOUT_SECONDS.toFixed(1)}s`; clearInterval(challengeTimerInterval); challengeTimerInterval = setInterval(() => { const sLeft = Math.max(0, CHALLENGE_TIMEOUT_SECONDS - (performance.now() - challengeStartTime) / 1000); timerEl.textContent = `Tempo: ${sLeft.toFixed(1)}s`; if (sLeft <= 0) { clearInterval(challengeTimerInterval); failChallenge(wordDataIdx); } }, 90); challengeModal.classList.remove('hidden'); }
 hintBtn.addEventListener('click', () => { playSound('uiClick', 0.5); if (challengeActive && !usedHint && currentChallengeWordMapIndex !== -1) { const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; hintEl.textContent = WORDS_DATA[mapElement.wordDataIndex].dica || "Sem dica."; usedHint = true; hintBtn.disabled = true; }});
 answerForm.addEventListener('submit', (e) => { e.preventDefault(); playSound('uiClick', 0.5); if (!challengeActive || currentChallengeWordMapIndex === -1) return; const userAnswer = normalize(answerInputEl.value); const mapElement = gameElementsOnMap[currentChallengeWordMapIndex]; const wordEntry = WORDS_DATA[mapElement.wordDataIndex]; const isCorrect = wordEntry.pt.some(t => normalize(t) === userAnswer); if (isCorrect) completeChallenge(mapElement.wordDataIndex); else { feedbackEl.textContent = "Tradução incorreta. Tente novamente!"; answerInputEl.select(); }});
-function completeChallenge(wordDataIdx) { 
-    playSound('collectWord'); clearInterval(challengeTimerInterval); 
-    const timeTaken = (performance.now() - challengeStartTime) / 1000; const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken)); 
-    points += ptsEarned; wordsFoundCorrectly++; if(currentChallengeWordMapIndex !== -1) gameElementsOnMap[currentChallengeWordMapIndex].found = true; 
-    updatePointsDisplay(); feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`; 
-    setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800); 
-}
+function completeChallenge(wordDataIdx) {  playSound('collectWord'); clearInterval(challengeTimerInterval);  const timeTaken = (performance.now() - challengeStartTime) / 1000; const ptsEarned = Math.round(usedHint ? Math.max(10, 60 - 3.5 * timeTaken) : Math.max(20, 100 - 5 * timeTaken));  points += ptsEarned; wordsFoundCorrectly++; if(currentChallengeWordMapIndex !== -1 && gameElementsOnMap[currentChallengeWordMapIndex]) gameElementsOnMap[currentChallengeWordMapIndex].found = true;  updatePointsDisplay(); feedbackEl.textContent = usedHint ? `Correto! +${ptsEarned} pts (com dica)` : `Correto! +${ptsEarned} pts`;  setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; checkWinCondition(); }, 800);  }
 function failChallenge(wordDataIdx) { clearInterval(challengeTimerInterval); feedbackEl.textContent = `Tempo esgotado! Resposta: ${WORDS_DATA[wordDataIdx].pt[0]}`; setTimeout(() => { challengeModal.classList.add('hidden'); challengeActive = false; }, 1500); }
 function checkWinCondition() { if (wordsFoundCorrectly >= wordsToWin && viloesDefeated >= viloesToWin) { isGameOver = true; gameOutcomeType = "win"; showEndGameModal(); } }
 function showEndGameModal() { endModal.classList.remove('hidden'); if (gameOutcomeType === "win") { endTitleEl.innerHTML = '<span class="hebrew">מַזָּל טוֹב</span>'; endMsgEl.textContent = `Parabéns, ${playerName}! Você venceu com ${points} pontos!`; } else { endTitleEl.textContent = "Game Over"; endMsgEl.textContent = `${playerName}, não foi desta vez. Tente novamente!`; } }
 
 // ======== Loop Principal do Jogo ========
-let lastTimestamp = 0;
+let lastTimestamp = 0; let gameAnimationId = null;
 function gameLoop(timestamp) {
-  if (!lastTimestamp) lastTimestamp = timestamp;
-  // const deltaTime = (timestamp - lastTimestamp) / 1000; // Delta time em segundos, se necessário para física baseada em tempo
-  lastTimestamp = timestamp;
-
-  if (isGameOver) {
-      if (gameSounds.background && gameSounds.background.src && !gameSounds.background.paused) gameSounds.background.pause();
+  if (!player) { // Adiciona uma verificação para player
+      console.warn("Player não inicializado, parando gameLoop.");
+      if(gameAnimationId) cancelAnimationFrame(gameAnimationId);
       return;
   }
-  if (!challengeActive) {
-    updatePlayerState(); updateProjectiles(); updateViloesAnimation(); checkCollisions();
-    if (playerGlowEffect > 0) playerGlowEffect--;
-  }
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  lastTimestamp = timestamp;
+  if (isGameOver) { if (gameSounds.background && gameSounds.background.src && !gameSounds.background.paused) gameSounds.background.pause(); if(gameAnimationId) cancelAnimationFrame(gameAnimationId); return; }
+  if (!challengeActive) { updatePlayerState(); updateProjectiles(); updateViloesAnimation(); checkCollisions(); if (playerGlowEffect > 0) playerGlowEffect--; }
   drawGameWorld();
-  requestAnimationFrame(gameLoop);
+  gameAnimationId = requestAnimationFrame(gameLoop);
 }
 
 // ======== Controles (Mantido) ========
-document.addEventListener('keydown', (e) => { const activeEl = document.activeElement; const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA'); if (!isInputFocused && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space")) { if(!challengeActive) e.preventDefault(); } if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = true; if (e.code === "Space" && !challengeActive) fireProjectile(); if (challengeActive && e.code === "Escape") { challengeModal.classList.add('hidden'); challengeActive = false; clearInterval(challengeTimerInterval); } });
-document.addEventListener('keyup', (e) => { if (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight") keys[e.code] = false; });
-if (isMobileDevice()) { const touchBtnLeft = document.getElementById('btnLeft'); const touchBtnRight = document.getElementById('btnRight'); const touchBtnUp = document.getElementById('btnUp'); const touchBtnFire = document.getElementById('btnFire'); let touchMappings = [ {btn: touchBtnLeft, code: 'ArrowLeft'}, {btn: touchBtnRight, code: 'ArrowRight'}, {btn: touchBtnUp, code: 'ArrowUp'} ]; touchMappings.forEach(({ btn, code }) => { btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; }, { passive: false }); btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[code] = false; }, { passive: false }); btn.addEventListener('touchcancel', (e) => { keys[code] = false; }, { passive: false }); }); touchBtnFire.addEventListener('touchstart', (e) => { e.preventDefault(); if (!challengeActive) fireProjectile(); }, { passive: false });}
+document.addEventListener('keydown', (e) => { const activeEl = document.activeElement; const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA'); if (!isInputFocused && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space")) { if(!challengeActive && keys) e.preventDefault(); } if (keys && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight")) keys[e.code] = true; if (e.code === "Space" && !challengeActive) fireProjectile(); if (challengeActive && e.code === "Escape") { challengeModal.classList.add('hidden'); challengeActive = false; clearInterval(challengeTimerInterval); } });
+document.addEventListener('keyup', (e) => { if (keys && (e.code === "ArrowUp" || e.code === "ArrowLeft" || e.code === "ArrowRight")) keys[e.code] = false; });
+if (isMobileDevice()) { const touchBtnLeft = document.getElementById('btnLeft'); const touchBtnRight = document.getElementById('btnRight'); const touchBtnUp = document.getElementById('btnUp'); const touchBtnFire = document.getElementById('btnFire'); let touchMappings = [ {btn: touchBtnLeft, code: 'ArrowLeft'}, {btn: touchBtnRight, code: 'ArrowRight'}, {btn: touchBtnUp, code: 'ArrowUp'} ]; touchMappings.forEach(({ btn, code }) => { btn.addEventListener('touchstart', (e) => { e.preventDefault(); if(keys) keys[code] = true; }, { passive: false }); btn.addEventListener('touchend', (e) => { e.preventDefault(); if(keys) keys[code] = false; }, { passive: false }); btn.addEventListener('touchcancel', (e) => { if(keys) keys[code] = false; }, { passive: false }); }); touchBtnFire.addEventListener('touchstart', (e) => { e.preventDefault(); if (!challengeActive) fireProjectile(); }, { passive: false });}
 
 // ======== Ajuste do Canvas e Inicialização ========
-function adjustGameCanvas() { let newWidth = Math.min(window.innerWidth - 15, 900); let bottomMargin = isMobileDevice() ? (touchControls.offsetHeight > 0 ? touchControls.offsetHeight + 10 : 80) : 20; let topMargin = scoreHud.offsetHeight > 0 ? scoreHud.offsetHeight + 10 : 60; newHeight = Math.max(300, Math.min(window.innerHeight - topMargin - bottomMargin, 550)); gameCanvas.width = newWidth; gameCanvas.height = newHeight; if (player) { player.x = gameCanvas.width / 2.5; groundY = gameCanvas.height * 0.82; if(player.y + player.height > groundY) player.y = groundY - player.height; if(!isGameOver) drawGameWorld(); } } // Redesenha apenas se o jogo não acabou
+function adjustGameCanvas() { let newWidth = Math.min(window.innerWidth - 15, 900); let bottomMargin = isMobileDevice() ? (touchControls.offsetHeight > 0 ? touchControls.offsetHeight + 10 : 80) : 20; let topMargin = scoreHud.offsetHeight > 0 ? scoreHud.offsetHeight + 10 : 60; newHeight = Math.max(300, Math.min(window.innerHeight - topMargin - bottomMargin, 550)); gameCanvas.width = newWidth; gameCanvas.height = newHeight; if (player && ctx) { player.x = gameCanvas.width / 2.5; groundY = gameCanvas.height * 0.82; if(player.y + player.height > groundY) player.y = groundY - player.height; if(!isGameOver && gameCanvas.style.display === 'block') drawGameWorld(); } } 
 window.addEventListener('resize', adjustGameCanvas);
 document.addEventListener('DOMContentLoaded', () => {
     adjustGameCanvas(); 
-    // O carregamento de sons agora é iniciado após o primeiro clique no "Play" ou "OK"
-    // para ajudar com as políticas de autoplay dos navegadores.
+    // O carregamento de sons é acionado pelo primeiro clique em "Play" ou "OK".
 });
 </script>
 </body>
